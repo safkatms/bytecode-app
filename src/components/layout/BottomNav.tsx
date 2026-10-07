@@ -1,0 +1,91 @@
+import React from "react";
+import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { usePathname, useRouter } from "expo-router";
+import Feather from "@expo/vector-icons/Feather";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { colors } from "../ui/theme";
+import { useAuthStore } from "@/store/auth.store";
+
+export function BottomNav() {
+  const { user } = useAuthStore();
+  const isAdmin = user?.role === "admin";
+
+  const nav = [
+    { href: "/(app)/dashboard", label: "Dashboard", icon: "home" },
+    ...(isAdmin
+      ? [
+          {
+            href: "/(app)/admin/attendance",
+            label: "Attendance",
+            icon: "clock",
+          },
+          {
+            href: "/(app)/admin/employees",
+            label: "Employees",
+            icon: "user-check",
+          },
+          {
+            href: "/(app)/admin/locations",
+            label: "Locations",
+            icon: "map-pin",
+          },
+        ]
+      : []),
+  ];
+
+  const pathname = usePathname();
+  const router = useRouter();
+  const insets = useSafeAreaInsets();
+
+  return (
+    <View style={[styles.nav, { paddingBottom: Math.max(insets.bottom, 8) }]}>
+      {nav.map(({ href, label, icon }) => {
+        const active =
+          pathname === href.replace("/(app)", "") ||
+          pathname.startsWith(href.replace("/(app)", "") + "/");
+        return (
+          <TouchableOpacity
+            key={href}
+            style={styles.tab}
+            onPress={() => {
+              if (!active) router.push(href as any);
+            }}
+            activeOpacity={0.7}
+          >
+            <Feather
+              name={icon as any}
+              size={22}
+              color={active ? colors.teal[600] : colors.gray[400]}
+            />
+            <Text
+              style={[
+                styles.label,
+                active ? styles.labelActive : styles.labelInactive,
+              ]}
+            >
+              {label}
+            </Text>
+          </TouchableOpacity>
+        );
+      })}
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  nav: {
+    flexDirection: "row",
+    backgroundColor: "#fff",
+    borderTopWidth: 1,
+    borderTopColor: colors.gray[200],
+  },
+  tab: {
+    flex: 1,
+    alignItems: "center",
+    paddingTop: 8,
+    gap: 3,
+  },
+  label: { fontSize: 10, fontWeight: "500" },
+  labelActive: { color: colors.teal[600] },
+  labelInactive: { color: colors.gray[400] },
+});

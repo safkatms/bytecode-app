@@ -1,0 +1,163 @@
+// src/lib/api/attendance.api.ts
+
+import { api } from '@/lib/axios';
+import type { ApiResponse, PaginatedResponse } from '@/types/api';
+import type {
+    AttendanceRecord,
+    AttendanceFilter,
+    DailySummaryItem,
+    MonthlySummary,
+    Employee,
+    EmployeeFilter,
+    TrustedDevice,
+    OfficeLocation,
+} from '@/types/attendance';
+
+
+
+// ── Admin: Attendance ──────────────────────────────────────────────────────────
+
+export async function adminListAttendance(filter: AttendanceFilter = {}): Promise<PaginatedResponse<AttendanceRecord>> {
+    const res = await api.get<PaginatedResponse<AttendanceRecord>>('/admin/attendance', { params: filter });
+    return res.data;
+}
+
+export async function adminGetAttendance(id: number): Promise<AttendanceRecord> {
+    const res = await api.get<ApiResponse<AttendanceRecord>>(`/admin/attendance/${id}`);
+    return res.data.data!;
+}
+
+export async function adminMarkAttendance(payload: {
+    employeeId: number;
+    attendanceDate: string;
+    status: string;
+    checkInTime?: string;
+    checkOutTime?: string;
+    lateMinutes?: number;
+    note?: string;
+}): Promise<AttendanceRecord> {
+    const res = await api.post<ApiResponse<AttendanceRecord>>('/admin/attendance', payload);
+    return res.data.data!;
+}
+
+export async function adminUpdateAttendance(id: number, payload: Partial<{
+    attendanceDate: string;
+    status: string;
+    checkInTime: string;
+    checkOutTime: string;
+    lateMinutes: number;
+    note: string;
+}>): Promise<AttendanceRecord> {
+    const res = await api.patch<ApiResponse<AttendanceRecord>>(`/admin/attendance/${id}`, payload);
+    return res.data.data!;
+}
+
+export async function adminDeleteAttendance(id: number): Promise<void> {
+    await api.delete(`/admin/attendance/${id}`);
+}
+
+export async function adminGetDailySummary(date: string): Promise<DailySummaryItem[]> {
+    const res = await api.get<ApiResponse<DailySummaryItem[]>>(`/admin/attendance/summary/daily?date=${date}`);
+    return res.data.data!;
+}
+
+export async function adminGetMonthlySummary(month: string, employeeId?: number): Promise<MonthlySummary | MonthlySummary[]> {
+    const res = await api.get<ApiResponse<MonthlySummary | MonthlySummary[]>>(
+        `/admin/attendance/summary/monthly`,
+        { params: { month, employeeId } }
+    );
+    return res.data.data!;
+}
+
+// ── Admin: Employees ───────────────────────────────────────────────────────────
+
+export async function adminListEmployees(filter: EmployeeFilter = {}): Promise<PaginatedResponse<Employee>> {
+    const res = await api.get<PaginatedResponse<Employee>>('/employees', { params: filter });
+    return res.data;
+}
+
+export async function adminGetEmployee(id: number): Promise<Employee> {
+    const res = await api.get<ApiResponse<Employee>>(`/employees/${id}`);
+    return res.data.data!;
+}
+
+export async function adminCreateEmployee(payload: {
+    firstName: string;
+    lastName: string;
+    email: string;
+    phone?: string;
+    employeeCode: string;
+    department?: string;
+    designation?: string;
+    joiningDate: string;
+}): Promise<{ employee: Employee; temporaryPassword: string }> {
+    const res = await api.post<ApiResponse<{ employee: Employee; temporaryPassword: string }>>(
+        '/employees',
+        payload,
+    );
+    return res.data.data!;
+}
+
+export async function adminUpdateEmployee(id: number, payload: Partial<{
+    employeeCode: string;
+    department: string;
+    designation: string;
+    joiningDate: string;
+}>): Promise<Employee> {
+    const res = await api.patch<ApiResponse<Employee>>(`/employees/${id}`, payload);
+    return res.data.data!;
+}
+
+export async function adminToggleEmployee(id: number): Promise<Employee> {
+    const res = await api.patch<ApiResponse<Employee>>(`/employees/${id}/toggle-active`, {});
+    return res.data.data!;
+}
+
+export async function adminDeleteEmployee(id: number): Promise<void> {
+    await api.delete(`/employees/${id}`);
+}
+
+export async function adminGetDevices(employeeId: number): Promise<TrustedDevice[]> {
+    const res = await api.get<ApiResponse<TrustedDevice[]>>(`/employees/${employeeId}/devices`);
+    return res.data.data!;
+}
+
+export async function adminRevokeDevice(deviceId: number): Promise<void> {
+    await api.delete(`/admin/attendance/devices/${deviceId}`);
+}
+
+// ── Admin: Office Locations ────────────────────────────────────────────────────
+
+export async function adminListLocations(): Promise<OfficeLocation[]> {
+    const res = await api.get<ApiResponse<OfficeLocation[]>>('/admin/attendance/office-locations');
+    return res.data.data!;
+}
+
+export async function adminGetLocation(id: number): Promise<OfficeLocation> {
+    const res = await api.get<ApiResponse<OfficeLocation>>(`/admin/attendance/office-locations/${id}`);
+    return res.data.data!;
+}
+
+export async function adminCreateLocation(payload: {
+    name: string;
+    latitude: number;
+    longitude: number;
+    radiusMeters: number;
+}): Promise<OfficeLocation> {
+    const res = await api.post<ApiResponse<OfficeLocation>>('/admin/attendance/office-locations', payload);
+    return res.data.data!;
+}
+
+export async function adminUpdateLocation(id: number, payload: Partial<{
+    name: string;
+    latitude: number;
+    longitude: number;
+    radiusMeters: number;
+}>): Promise<OfficeLocation> {
+    const res = await api.patch<ApiResponse<OfficeLocation>>(`/admin/attendance/office-locations/${id}`, payload);
+    return res.data.data!;
+}
+
+export async function adminDeleteLocation(id: number): Promise<void> {
+    await api.delete(`/admin/attendance/office-locations/${id}`);
+}
