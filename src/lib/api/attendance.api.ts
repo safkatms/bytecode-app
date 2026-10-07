@@ -87,7 +87,7 @@ export async function adminCreateEmployee(payload: {
     email: string;
     phone?: string;
     employeeCode: string;
-    department?: string;
+    departmentId?: number;
     designation?: string;
     joiningDate: string;
 }): Promise<{ employee: Employee; temporaryPassword: string }> {
@@ -99,8 +99,12 @@ export async function adminCreateEmployee(payload: {
 }
 
 export async function adminUpdateEmployee(id: number, payload: Partial<{
+    firstName: string;
+    lastName: string;
+    email: string;
+    phone: string;
     employeeCode: string;
-    department: string;
+    departmentId: number;
     designation: string;
     joiningDate: string;
 }>): Promise<Employee> {
@@ -123,7 +127,11 @@ export async function adminGetDevices(employeeId: number): Promise<TrustedDevice
 }
 
 export async function adminRevokeDevice(deviceId: number): Promise<void> {
-    await api.delete(`/admin/attendance/devices/${deviceId}`);
+    await api.delete(`/employees/devices/${deviceId}`);
+}
+
+export async function adminUnrevokeDevice(deviceId: number): Promise<void> {
+    await api.patch(`/employees/devices/${deviceId}/unrevoke`);
 }
 
 // ── Admin: Office Locations ────────────────────────────────────────────────────

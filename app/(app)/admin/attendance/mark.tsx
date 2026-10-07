@@ -43,8 +43,8 @@ const STATUS_COLOR: Record<AttendanceStatus, string> = {
   absent: colors.red[500],
   late: colors.orange[500],
   half_day: colors.amber[500],
-  on_leave: colors.teal[500],
-  holiday: colors.teal[700],
+  on_leave: colors.bytecode[500],
+  holiday: colors.bytecode[700],
   weekend: colors.gray[400],
 };
 const ALL_STATUSES = Object.keys(STATUS_LABEL) as AttendanceStatus[];
@@ -117,7 +117,7 @@ export default function AdminMarkAttendanceScreen() {
     >
       <PageHeader
         title="Mark Attendance"
-        variant="teal"
+        variant="bytecode"
         rightTextAction={{
           label: markMut.isPending ? "Saving…" : "Save",
           onPress: () => markMut.mutate(),
@@ -170,7 +170,7 @@ export default function AdminMarkAttendanceScreen() {
           style={s.inputRow}
           onPress={() => setShowDatePicker(true)}
         >
-          <Feather name="calendar" size={14} color={colors.teal[500]} />
+          <Feather name="calendar" size={14} color={colors.bytecode[500]} />
           <Text style={s.inputText}>{displayDate}</Text>
         </TouchableOpacity>
         {showDatePicker && Platform.OS === "android" && (
@@ -346,7 +346,11 @@ export default function AdminMarkAttendanceScreen() {
                   </Text>
                 </View>
                 {selectedEmp?.id === item.id && (
-                  <Feather name="check" size={16} color={colors.teal[600]} />
+                  <Feather
+                    name="check"
+                    size={16}
+                    color={colors.bytecode[600]}
+                  />
                 )}
               </TouchableOpacity>
             )}
@@ -387,11 +391,11 @@ const s = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: colors.teal[100],
+    backgroundColor: colors.bytecode[100],
     alignItems: "center",
     justifyContent: "center",
   },
-  empInitials: { fontSize: 13, fontWeight: "800", color: colors.teal[700] },
+  empInitials: { fontSize: 13, fontWeight: "800", color: colors.bytecode[700] },
   selectedEmpName: { fontSize: 14, fontWeight: "700", color: colors.gray[900] },
   selectedEmpCode: { fontSize: 11, color: colors.gray[400] },
   inputRow: {
@@ -473,11 +477,15 @@ const s = StyleSheet.create({
     width: 38,
     height: 38,
     borderRadius: 19,
-    backgroundColor: colors.teal[100],
+    backgroundColor: colors.bytecode[100],
     alignItems: "center",
     justifyContent: "center",
   },
-  empItemInitials: { fontSize: 13, fontWeight: "800", color: colors.teal[700] },
+  empItemInitials: {
+    fontSize: 13,
+    fontWeight: "800",
+    color: colors.bytecode[700],
+  },
   empItemName: { fontSize: 14, fontWeight: "700", color: colors.gray[900] },
   empItemCode: { fontSize: 11, color: colors.gray[400] },
 });

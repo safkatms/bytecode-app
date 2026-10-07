@@ -65,7 +65,7 @@ export default function SwitchUserScreen() {
 
       {isLoading && (
         <View style={styles.center}>
-          <ActivityIndicator color={colors.teal[600]} />
+          <ActivityIndicator color={colors.bytecode[600]} />
         </View>
       )}
 
@@ -116,7 +116,7 @@ export default function SwitchUserScreen() {
                       {
                         backgroundColor:
                           item.role === "admin"
-                            ? colors.teal[50]
+                            ? colors.bytecode[50]
                             : colors.gray[100],
                       },
                     ]}
@@ -127,7 +127,7 @@ export default function SwitchUserScreen() {
                         {
                           color:
                             item.role === "admin"
-                              ? colors.teal[700]
+                              ? colors.bytecode[700]
                               : colors.gray[600],
                         },
                       ]}
@@ -140,7 +140,10 @@ export default function SwitchUserScreen() {
                   )}
                 </View>
                 {isSwitching ? (
-                  <ActivityIndicator size="small" color={colors.teal[600]} />
+                  <ActivityIndicator
+                    size="small"
+                    color={colors.bytecode[600]}
+                  />
                 ) : (
                   <Feather
                     name="chevron-right"
@@ -191,11 +194,11 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 13,
-    backgroundColor: colors.teal[50],
+    backgroundColor: colors.bytecode[50],
     alignItems: "center",
     justifyContent: "center",
   },
-  avatarText: { fontSize: 13, fontWeight: "800", color: colors.teal[700] },
+  avatarText: { fontSize: 13, fontWeight: "800", color: colors.bytecode[700] },
   userInfo: { flex: 1 },
   userName: { fontSize: 14, fontWeight: "700", color: colors.gray[900] },
   userEmail: { fontSize: 11, color: colors.gray[400], marginTop: 2 },

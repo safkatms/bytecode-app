@@ -3,8 +3,15 @@ import { useAuthStore } from '@/store/auth.store';
 import type { ApiResponse, TokenResponse } from '@/types/api';
 import type { User } from '@/types/finance';
 import { queryClient } from '../query-client';
-export async function login(email: string, password: string) {
-    const res = await api.post<ApiResponse<{ accessToken: string; refreshToken: string; expiresIn: string; user: User }>>('/auth/login', { email, password });
+export async function login(
+    email: string,
+    password: string,
+    options?: { deviceId?: string; deviceName?: string },
+) {
+    const res = await api.post<ApiResponse<{ accessToken: string; refreshToken: string; expiresIn: string; user: User }>>(
+        '/auth/login',
+        { email, password, ...options },
+    );
     const { accessToken, refreshToken, user } = res.data.data!;
     await setTokens(accessToken, refreshToken);
     return user;
@@ -29,11 +36,6 @@ export async function forgotPassword(email: string) {
 
 export async function resetPassword(token: string, newPassword: string) {
     await api.post('/auth/reset-password', { token, newPassword });
-}
-
-export async function getMe(): Promise<User> {
-    const res = await api.get<ApiResponse<User>>('/users/me');
-    return res.data.data!;
 }
 
 export async function switchUser(userId: number): Promise<User> {

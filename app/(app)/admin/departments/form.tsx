@@ -1,4 +1,4 @@
-// app/(app)/admin/locations/form.tsx
+// app/(app)/admin/departments/form.tsx
 
 import React, { useEffect } from "react";
 import {
@@ -9,6 +9,7 @@ import {
   TextInput,
   KeyboardAvoidingView,
   Platform,
+  Switch,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useForm, Controller } from "react-hook-form";
@@ -18,10 +19,10 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Feather from "@expo/vector-icons/Feather";
 import {
-  adminCreateLocation,
-  adminUpdateLocation,
-  adminGetLocation,
-} from "@/lib/api/attendance.api";
+  adminCreateDepartment,
+  adminUpdateDepartment,
+  adminGetDepartment,
+} from "@/lib/api/department.api";
 import { getApiErrorMessage } from "@/lib/api-error";
 import { colors } from "@/components/ui/theme";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -29,25 +30,9 @@ import { AlertUI } from "@/components/ui/Alert";
 import { Spinner } from "@/components/ui/Spinner";
 
 const schema = z.object({
-  name: z.string().min(1, "Required"),
-  latitude: z
-    .string()
-    .refine(
-      (v) => !isNaN(Number(v)) && Number(v) >= -90 && Number(v) <= 90,
-      "Valid latitude required",
-    ),
-  longitude: z
-    .string()
-    .refine(
-      (v) => !isNaN(Number(v)) && Number(v) >= -180 && Number(v) <= 180,
-      "Valid longitude required",
-    ),
-  radiusMeters: z
-    .string()
-    .refine(
-      (v) => !isNaN(Number(v)) && Number(v) >= 10 && Number(v) <= 5000,
-      "Must be 10–5000 meters",
-    ),
+  name: z.string().min(1, "Required").max(100, "Max 100 characters"),
+  description: z.string().max(255, "Max 255 characters").optional(),
+  isActive: z.boolean().optional(),
 });
 type FormData = z.infer<typeof schema>;
 
@@ -64,30 +49,35 @@ function Field({
     <View style={s.field}>
       <Text style={s.label}>{label}</Text>
       {children}
-      {error && <Text style={s.fieldError}>{error}</Text>}
+      {error ? <Text style={s.fieldError}>{error}</Text> : null}
     </View>
   );
 }
 
 function TextRow({
   icon,
+  multiline,
   ...props
-}: { icon: string } & React.ComponentProps<typeof TextInput>) {
+}: { icon: string; multiline?: boolean } & React.ComponentProps<
+  typeof TextInput
+>) {
   return (
-    <View style={s.inputRow}>
-      <View style={s.inputPrefix}>
+    <View style={[s.inputRow, multiline && s.inputRowMulti]}>
+      <View style={[s.inputPrefix, multiline && s.inputPrefixTop]}>
         <Feather name={icon as any} size={14} color={colors.bytecode[500]} />
       </View>
       <TextInput
-        style={s.textInput}
+        style={[s.textInput, multiline && s.textInputMulti]}
         placeholderTextColor={colors.gray[400]}
+        multiline={multiline}
+        textAlignVertical={multiline ? "top" : "center"}
         {...props}
       />
     </View>
   );
 }
 
-export default function AdminLocationFormScreen() {
+export default function AdminDepartmentFormScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const qc = useQueryClient();
@@ -96,8 +86,8 @@ export default function AdminLocationFormScreen() {
   const [error, setError] = React.useState("");
 
   const { data: existing, isLoading: loadingExisting } = useQuery({
-    queryKey: ["admin-location", id],
-    queryFn: () => adminGetLocation(Number(id)),
+    queryKey: ["admin-department", id],
+    queryFn: () => adminGetDepartment(Number(id)),
     enabled: isEdit,
   });
 
@@ -108,16 +98,15 @@ export default function AdminLocationFormScreen() {
     formState: { errors },
   } = useForm<FormData>({
     resolver: zodResolver(schema),
-    defaultValues: { radiusMeters: "100" },
+    defaultValues: { name: "", description: "", isActive: true },
   });
 
   useEffect(() => {
     if (existing) {
       reset({
         name: existing.name,
-        latitude: String(existing.latitude),
-        longitude: String(existing.longitude),
-        radiusMeters: String(existing.radiusMeters),
+        description: existing.description ?? "",
+        isActive: existing.isActive,
       });
     }
   }, [existing]);
@@ -126,16 +115,18 @@ export default function AdminLocationFormScreen() {
     mutationFn: (data: FormData) => {
       const payload = {
         name: data.name,
-        latitude: Number(data.latitude),
-        longitude: Number(data.longitude),
-        radiusMeters: Number(data.radiusMeters),
+        description: data.description || undefined,
+        ...(isEdit ? { isActive: data.isActive } : {}),
       };
       return isEdit
-        ? adminUpdateLocation(Number(id), payload)
-        : adminCreateLocation(payload);
+        ? adminUpdateDepartment(Number(id), payload)
+        : adminCreateDepartment(payload);
     },
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["admin-locations"] });
+      qc.invalidateQueries({ queryKey: ["admin-departments"] });
+      if (isEdit) {
+        qc.invalidateQueries({ queryKey: ["admin-department", id] });
+      }
       router.back();
     },
     onError: (err) => setError(getApiErrorMessage(err)),
@@ -155,7 +146,7 @@ export default function AdminLocationFormScreen() {
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
       <PageHeader
-        title={isEdit ? "Edit Location" : "New Location"}
+        title={isEdit ? "Edit Department" : "New Department"}
         variant="bytecode"
         rightTextAction={{
           label: saveMut.isPending ? "Saving…" : "Save",
@@ -173,22 +164,14 @@ export default function AdminLocationFormScreen() {
       >
         {error ? <AlertUI message={error} type="error" /> : null}
 
-        <View style={s.hint}>
-          <Feather name="info" size={13} color={colors.bytecode[600]} />
-          <Text style={s.hintText}>
-            Get coordinates from Google Maps: long press a location → copy the
-            lat/lng shown at the bottom.
-          </Text>
-        </View>
-
-        <Field label="LOCATION NAME *" error={errors.name?.message}>
+        <Field label="DEPARTMENT NAME *" error={errors.name?.message}>
           <Controller
             control={control}
             name="name"
             render={({ field: { onChange, value, onBlur } }) => (
               <TextRow
-                icon="map-pin"
-                placeholder="Head Office"
+                icon="briefcase"
+                placeholder="e.g. Engineering"
                 onChangeText={onChange}
                 value={value}
                 onBlur={onBlur}
@@ -196,58 +179,55 @@ export default function AdminLocationFormScreen() {
             )}
           />
         </Field>
-        <Field label="LATITUDE *" error={errors.latitude?.message}>
+
+        <Field label="DESCRIPTION" error={errors.description?.message}>
           <Controller
             control={control}
-            name="latitude"
+            name="description"
             render={({ field: { onChange, value, onBlur } }) => (
               <TextRow
-                icon="navigation"
-                placeholder="23.8103"
+                icon="align-left"
+                placeholder="Short description (optional)"
                 onChangeText={onChange}
                 value={value}
                 onBlur={onBlur}
-                keyboardType="numbers-and-punctuation"
+                multiline
               />
             )}
           />
         </Field>
-        <Field label="LONGITUDE *" error={errors.longitude?.message}>
-          <Controller
-            control={control}
-            name="longitude"
-            render={({ field: { onChange, value, onBlur } }) => (
-              <TextRow
-                icon="navigation-2"
-                placeholder="90.4125"
-                onChangeText={onChange}
-                value={value}
-                onBlur={onBlur}
-                keyboardType="numbers-and-punctuation"
-              />
-            )}
-          />
-        </Field>
-        <Field label="RADIUS (METERS) *" error={errors.radiusMeters?.message}>
-          <Controller
-            control={control}
-            name="radiusMeters"
-            render={({ field: { onChange, value, onBlur } }) => (
-              <TextRow
-                icon="disc"
-                placeholder="100"
-                onChangeText={onChange}
-                value={value}
-                onBlur={onBlur}
-                keyboardType="number-pad"
-              />
-            )}
-          />
-          <Text style={s.subHint}>
-            Employees must be within this radius to check in. Recommended:
-            50–200m.
-          </Text>
-        </Field>
+
+        {isEdit && (
+          <Field label="STATUS">
+            <Controller
+              control={control}
+              name="isActive"
+              render={({ field: { onChange, value } }) => (
+                <View style={s.switchRow}>
+                  <View style={s.switchInfo}>
+                    <Text style={s.switchLabel}>
+                      {value ? "Active" : "Inactive"}
+                    </Text>
+                    <Text style={s.switchSub}>
+                      {value
+                        ? "Department is visible and assignable"
+                        : "Department is hidden from dropdowns"}
+                    </Text>
+                  </View>
+                  <Switch
+                    value={value}
+                    onValueChange={onChange}
+                    trackColor={{
+                      false: colors.gray[200],
+                      true: colors.bytecode[400],
+                    }}
+                    thumbColor="#fff"
+                  />
+                </View>
+              )}
+            />
+          </Field>
+        )}
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -273,6 +253,7 @@ const s = StyleSheet.create({
     borderRadius: 14,
     overflow: "hidden",
   },
+  inputRowMulti: { alignItems: "flex-start", minHeight: 100 },
   inputPrefix: {
     width: 44,
     height: 50,
@@ -281,6 +262,7 @@ const s = StyleSheet.create({
     borderRightWidth: 1,
     borderRightColor: colors.bytecode[50],
   },
+  inputPrefixTop: { height: undefined, paddingVertical: 14 },
   textInput: {
     flex: 1,
     height: 50,
@@ -288,22 +270,24 @@ const s = StyleSheet.create({
     fontSize: 15,
     color: colors.gray[900],
   },
+  textInputMulti: {
+    height: undefined,
+    minHeight: 80,
+    paddingTop: 14,
+    paddingBottom: 14,
+  },
   fieldError: { fontSize: 12, color: colors.red[500] },
-  hint: {
+  switchRow: {
     flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 8,
-    backgroundColor: colors.bytecode[50],
-    borderRadius: 12,
-    padding: 12,
-    borderWidth: 1,
+    alignItems: "center",
+    backgroundColor: "#fff",
+    borderRadius: 14,
+    borderWidth: 1.5,
     borderColor: colors.bytecode[100],
+    padding: 14,
+    gap: 12,
   },
-  hintText: {
-    flex: 1,
-    fontSize: 12,
-    color: colors.bytecode[800],
-    lineHeight: 18,
-  },
-  subHint: { fontSize: 11, color: colors.gray[400] },
+  switchInfo: { flex: 1 },
+  switchLabel: { fontSize: 15, fontWeight: "700", color: colors.gray[900] },
+  switchSub: { fontSize: 12, color: colors.gray[400], marginTop: 2 },
 });

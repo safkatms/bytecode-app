@@ -33,8 +33,8 @@ const STATUS_COLOR: Record<AttendanceStatus, string> = {
   absent: colors.red[500],
   late: colors.orange[500],
   half_day: colors.amber[500],
-  on_leave: colors.teal[500],
-  holiday: colors.teal[700],
+  on_leave: colors.bytecode[500],
+  holiday: colors.bytecode[700],
   weekend: colors.gray[400],
 };
 const STATUS_LABEL: Record<AttendanceStatus, string> = {
@@ -149,7 +149,7 @@ export default function AdminAttendanceDetailScreen() {
     <View style={[s.root, { paddingTop: insets.top }]}>
       <PageHeader
         title="Attendance Detail"
-        variant="teal"
+        variant="bytecode"
         rightActions={[
           {
             icon: editing ? "x" : "edit-2",
@@ -268,7 +268,7 @@ export default function AdminAttendanceDetailScreen() {
               style={s.inputRow}
               onPress={() => setShowCheckInPicker(true)}
             >
-              <Feather name="log-in" size={14} color={colors.teal[500]} />
+              <Feather name="log-in" size={14} color={colors.bytecode[500]} />
               <Text
                 style={[s.inputText, !checkIn && { color: colors.gray[400] }]}
               >
@@ -368,11 +368,11 @@ const s = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: colors.teal[100],
+    backgroundColor: colors.bytecode[100],
     alignItems: "center",
     justifyContent: "center",
   },
-  empInitials: { fontSize: 17, fontWeight: "800", color: colors.teal[700] },
+  empInitials: { fontSize: 17, fontWeight: "800", color: colors.bytecode[700] },
   empInfo: { flex: 1 },
   empName: { fontSize: 15, fontWeight: "800", color: colors.gray[900] },
   empCode: { fontSize: 12, color: colors.gray[400], marginTop: 2 },
@@ -462,7 +462,7 @@ const s = StyleSheet.create({
   },
   textarea: { height: 80, textAlignVertical: "top", paddingTop: 10 },
   saveBtn: {
-    backgroundColor: colors.teal[600],
+    backgroundColor: colors.bytecode[600],
     borderRadius: 12,
     paddingVertical: 13,
     alignItems: "center",

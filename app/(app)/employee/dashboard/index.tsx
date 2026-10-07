@@ -22,11 +22,11 @@ import { getApiErrorMessage } from "@/lib/api-error";
 import { colors } from "@/components/ui/theme";
 
 const STATUS_COLOR: Record<string, string> = {
-  present: colors.teal[500],
+  present: colors.bytecode[500],
   late: colors.yellow[500],
   absent: colors.red[500],
   on_leave: colors.gray[400],
-  half_day: colors.teal[300],
+  half_day: colors.bytecode[300],
 };
 
 const STATUS_LABEL: Record<string, string> = {
@@ -54,7 +54,11 @@ function SectionHeader({
           style={styles.sectionActionBtn}
         >
           <Text style={styles.sectionAction}>See all</Text>
-          <Feather name="chevron-right" size={14} color={colors.teal[500]} />
+          <Feather
+            name="chevron-right"
+            size={14}
+            color={colors.bytecode[500]}
+          />
         </TouchableOpacity>
       )}
     </View>
@@ -105,7 +109,10 @@ function AttendanceTrendChart({
         <View style={styles.chartLegend}>
           <View style={styles.legendItem}>
             <View
-              style={[styles.legendDot, { backgroundColor: colors.teal[400] }]}
+              style={[
+                styles.legendDot,
+                { backgroundColor: colors.bytecode[400] },
+              ]}
             />
             <Text style={styles.legendText}>Present</Text>
           </View>
@@ -236,13 +243,19 @@ export default function EmployeeDashboardScreen() {
             <Text style={styles.heroEyebrow}>ATTENDANCE OVERVIEW</Text>
             <Text style={styles.heroGreeting}>{greeting}</Text>
           </View>
-          <TouchableOpacity
-            onPress={() => router.push("/(app)/attendance/history")}
-            style={styles.heroActionButton}
-            hitSlop={8}
-          >
-            <Feather name="calendar" size={17} color="rgba(255,255,255,0.9)" />
-          </TouchableOpacity>
+          <View style={styles.heroActions}>
+            <TouchableOpacity
+              onPress={() => router.push("/(app)/settings")}
+              style={styles.heroActionButton}
+              hitSlop={8}
+            >
+              <Feather
+                name="settings"
+                size={17}
+                color="rgba(255,255,255,0.9)"
+              />
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* Today status */}
@@ -336,7 +349,7 @@ export default function EmployeeDashboardScreen() {
           <StatCard
             label="Present"
             value={thisMonth.present}
-            color={colors.teal[500]}
+            color={colors.bytecode[500]}
             icon="check-circle"
           />
           <StatCard
@@ -405,7 +418,7 @@ export default function EmployeeDashboardScreen() {
                     <Feather
                       name="smartphone"
                       size={16}
-                      color={colors.teal[600]}
+                      color={colors.bytecode[600]}
                     />
                   </View>
                   <View style={styles.deviceInfo}>
@@ -445,7 +458,7 @@ const styles = StyleSheet.create({
   },
 
   hero: {
-    backgroundColor: colors.teal[700],
+    backgroundColor: colors.bytecode[700],
     paddingHorizontal: 20,
     paddingTop: 18,
     paddingBottom: 24,
@@ -468,6 +481,11 @@ const styles = StyleSheet.create({
     lineHeight: 29,
     fontWeight: "800",
     color: "#FFFFFF",
+  },
+  heroActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
   },
   heroActionButton: {
     width: 38,
@@ -560,7 +578,11 @@ const styles = StyleSheet.create({
     color: colors.gray[900],
   },
   sectionActionBtn: { flexDirection: "row", alignItems: "center", gap: 2 },
-  sectionAction: { fontSize: 13, color: colors.teal[600], fontWeight: "700" },
+  sectionAction: {
+    fontSize: 13,
+    color: colors.bytecode[600],
+    fontWeight: "700",
+  },
 
   statsGrid: { flexDirection: "row", gap: 10 },
   statCard: {
@@ -594,7 +616,7 @@ const styles = StyleSheet.create({
     gap: 10,
     borderRadius: 16,
     height: 56,
-    backgroundColor: colors.teal[600],
+    backgroundColor: colors.bytecode[600],
   },
   checkInBtnLabel: { fontSize: 15, fontWeight: "800", color: "#fff" },
 
@@ -667,7 +689,7 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 5,
     minHeight: 4,
   },
-  presentBar: { backgroundColor: colors.teal[400] },
+  presentBar: { backgroundColor: colors.bytecode[400] },
   absentBar: { backgroundColor: colors.red[400] },
   chartMonth: {
     fontSize: 9,
@@ -687,7 +709,7 @@ const styles = StyleSheet.create({
     width: 39,
     height: 39,
     borderRadius: 12,
-    backgroundColor: colors.teal[50],
+    backgroundColor: colors.bytecode[50],
     alignItems: "center",
     justifyContent: "center",
   },
@@ -695,7 +717,7 @@ const styles = StyleSheet.create({
   deviceName: { fontSize: 14, fontWeight: "700", color: colors.gray[900] },
   deviceMeta: { fontSize: 11, color: colors.gray[400], marginTop: 2 },
   deviceActiveBadge: {
-    backgroundColor: colors.teal[50],
+    backgroundColor: colors.bytecode[50],
     borderRadius: 8,
     paddingHorizontal: 9,
     paddingVertical: 5,
@@ -703,14 +725,14 @@ const styles = StyleSheet.create({
   deviceActiveBadgeText: {
     fontSize: 10,
     fontWeight: "800",
-    color: colors.teal[700],
+    color: colors.bytecode[700],
   },
 
   retryButton: {
     marginTop: 16,
     paddingHorizontal: 24,
     paddingVertical: 12,
-    backgroundColor: colors.teal[600],
+    backgroundColor: colors.bytecode[600],
     borderRadius: 12,
   },
   retryLabel: { color: "#FFFFFF", fontWeight: "800" },

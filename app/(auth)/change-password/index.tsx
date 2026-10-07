@@ -74,7 +74,7 @@ export default function ChangePasswordScreen() {
       >
         <View style={styles.header}>
           <View style={styles.iconWrap}>
-            <Feather name="lock" size={28} color={colors.teal[600]} />
+            <Feather name="lock" size={28} color={colors.bytecode[600]} />
           </View>
           <Text style={styles.title}>Change Password</Text>
           <Text style={styles.subtitle}>
@@ -126,7 +126,7 @@ export default function ChangePasswordScreen() {
                           <Feather
                             name="lock"
                             size={16}
-                            color={colors.teal[500]}
+                            color={colors.bytecode[500]}
                           />
                         </View>
                         <TextInput
@@ -204,7 +204,7 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: 20,
-    backgroundColor: colors.teal[50],
+    backgroundColor: colors.bytecode[50],
     alignItems: "center",
     justifyContent: "center",
   },
@@ -238,7 +238,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     borderWidth: 1.5,
-    borderColor: colors.teal[200],
+    borderColor: colors.bytecode[200],
     borderRadius: 14,
     overflow: "hidden",
     backgroundColor: "#FAFAFE",
@@ -250,7 +250,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     borderRightWidth: 1,
-    borderRightColor: colors.teal[100],
+    borderRightColor: colors.bytecode[100],
   },
   inputSuffix: {
     width: 44,
@@ -276,7 +276,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     borderRadius: 16,
     height: 56,
-    backgroundColor: colors.teal[600],
+    backgroundColor: colors.bytecode[600],
     marginTop: 4,
   },
   submitBtnDisabled: { opacity: 0.6 },

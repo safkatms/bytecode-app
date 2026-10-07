@@ -126,7 +126,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: colors.gray[100],
   },
-  optionSelected: { backgroundColor: colors.teal[50] },
+  optionSelected: { backgroundColor: colors.bytecode[50] },
   optionText: { fontSize: 14, color: colors.gray[900] },
-  optionTextSelected: { color: colors.teal[600], fontWeight: "700" },
+  optionTextSelected: { color: colors.bytecode[600], fontWeight: "700" },
 });

@@ -58,7 +58,7 @@ export function OtpRevealModal({
 
         {/* Icon */}
         <View style={s.iconWrap}>
-          <Feather name="key" size={28} color={colors.teal[600]} />
+          <Feather name="key" size={28} color={colors.bytecode[600]} />
         </View>
 
         <Text style={s.title}>Temporary Password</Text>
@@ -81,7 +81,7 @@ export function OtpRevealModal({
             <Feather
               name={revealed ? "eye-off" : "eye"}
               size={18}
-              color={colors.teal[600]}
+              color={colors.bytecode[600]}
             />
           </TouchableOpacity>
         </View>
@@ -138,9 +138,9 @@ const s = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: 20,
-    backgroundColor: colors.teal[50],
+    backgroundColor: colors.bytecode[50],
     borderWidth: 1.5,
-    borderColor: colors.teal[100],
+    borderColor: colors.bytecode[100],
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 4,
@@ -168,7 +168,7 @@ const s = StyleSheet.create({
     alignSelf: "stretch",
     backgroundColor: colors.gray[50],
     borderWidth: 1.5,
-    borderColor: colors.teal[100],
+    borderColor: colors.bytecode[100],
     borderRadius: 14,
     paddingHorizontal: 16,
     paddingVertical: 14,
@@ -210,13 +210,13 @@ const s = StyleSheet.create({
     justifyContent: "center",
     gap: 8,
     alignSelf: "stretch",
-    backgroundColor: colors.teal[600],
+    backgroundColor: colors.bytecode[600],
     borderRadius: 14,
     paddingVertical: 14,
     marginTop: 4,
   },
   copyBtnDone: {
-    backgroundColor: colors.teal[500],
+    backgroundColor: colors.bytecode[500],
   },
   copyBtnText: {
     fontSize: 15,

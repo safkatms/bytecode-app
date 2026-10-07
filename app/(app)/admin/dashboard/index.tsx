@@ -45,7 +45,11 @@ function SectionHeader({
           style={styles.sectionActionBtn}
         >
           <Text style={styles.sectionAction}>See all</Text>
-          <Feather name="chevron-right" size={14} color={colors.teal[500]} />
+          <Feather
+            name="chevron-right"
+            size={14}
+            color={colors.bytecode[500]}
+          />
         </TouchableOpacity>
       )}
     </View>
@@ -70,7 +74,10 @@ function TrendChart({
         <View style={styles.chartLegend}>
           <View style={styles.legendItem}>
             <View
-              style={[styles.legendDot, { backgroundColor: colors.teal[400] }]}
+              style={[
+                styles.legendDot,
+                { backgroundColor: colors.bytecode[400] },
+              ]}
             />
             <Text style={styles.legendText}>Present</Text>
           </View>
@@ -128,11 +135,11 @@ function TrendChart({
 
 function ActivityRow({ item }: { item: RecentActivityItem }) {
   const STATUS_COLOR: Record<string, string> = {
-    present: colors.teal[500],
+    present: colors.bytecode[500],
     late: "#EAB308",
     absent: colors.red[500],
     on_leave: colors.gray[400],
-    half_day: colors.teal[300],
+    half_day: colors.bytecode[300],
   };
   const color = STATUS_COLOR[item.status] ?? colors.gray[400];
   const fmtTime = (iso: string | null) =>
@@ -212,7 +219,7 @@ function DeptRow({
   const pct =
     item.total > 0 ? Math.round((item.present / item.total) * 100) : 0;
   const barColor =
-    pct >= 80 ? colors.teal[500] : pct >= 50 ? "#EAB308" : colors.red[500];
+    pct >= 80 ? colors.bytecode[500] : pct >= 50 ? "#EAB308" : colors.red[500];
   return (
     <View style={styles.deptRow}>
       <View style={styles.deptHeader}>
@@ -252,22 +259,30 @@ export default function AdminDashboardScreen() {
     queryKey: ["admin-dashboard-overview"],
     queryFn: getAdminOverview,
   });
-  const { data: trend } = useQuery({
+  const { data: trend, refetch: refetchTrend } = useQuery({
     queryKey: ["admin-dashboard-trend"],
     queryFn: () => getAdminAttendanceTrend(6),
   });
-  const { data: deptData } = useQuery({
+  const { data: deptData, refetch: refetchDept } = useQuery({
     queryKey: ["admin-dashboard-dept"],
     queryFn: getAdminDepartmentBreakdown,
   });
-  const { data: activity } = useQuery({
+  const { data: activity, refetch: refetchActivity } = useQuery({
     queryKey: ["admin-dashboard-activity"],
     queryFn: () => getAdminRecentActivity(8),
   });
-  const { data: lateData } = useQuery({
+  const { data: lateData, refetch: refetchLate } = useQuery({
     queryKey: ["admin-dashboard-late"],
     queryFn: () => getAdminLateReport(),
   });
+
+  const handleRefresh = () => {
+    refetch();
+    refetchTrend();
+    refetchDept();
+    refetchActivity();
+    refetchLate();
+  };
 
   if (isLoading)
     return (
@@ -308,7 +323,7 @@ export default function AdminDashboardScreen() {
       ]}
       showsVerticalScrollIndicator={false}
       refreshControl={
-        <RefreshControl refreshing={isRefetching} onRefresh={refetch} />
+        <RefreshControl refreshing={isRefetching} onRefresh={handleRefresh} />
       }
     >
       {/* HERO */}
@@ -318,13 +333,19 @@ export default function AdminDashboardScreen() {
             <Text style={styles.heroEyebrow}>ADMIN · ATTENDANCE</Text>
             <Text style={styles.heroGreeting}>{greeting}</Text>
           </View>
-          <TouchableOpacity
-            onPress={() => router.push("/(app)/employees")}
-            style={styles.heroActionButton}
-            hitSlop={8}
-          >
-            <Feather name="users" size={17} color="rgba(255,255,255,0.9)" />
-          </TouchableOpacity>
+          <View style={styles.heroActions}>
+            <TouchableOpacity
+              onPress={() => router.push("/(app)/settings")}
+              style={styles.heroActionButton}
+              hitSlop={8}
+            >
+              <Feather
+                name="settings"
+                size={17}
+                color="rgba(255,255,255,0.9)"
+              />
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* Attendance rate */}
@@ -410,14 +431,14 @@ export default function AdminDashboardScreen() {
             {
               label: "Total",
               value: employees.total,
-              color: colors.teal[600],
-              bg: colors.teal[50],
+              color: colors.bytecode[600],
+              bg: colors.bytecode[50],
             },
             {
               label: "Active",
               value: employees.active,
-              color: colors.teal[600],
-              bg: colors.teal[50],
+              color: colors.bytecode[600],
+              bg: colors.bytecode[50],
             },
             {
               label: "Inactive",
@@ -455,6 +476,11 @@ export default function AdminDashboardScreen() {
               path: "/(app)/attendance/admin-mark",
             },
             {
+              icon: "briefcase" as const,
+              label: "Departments",
+              path: "/(app)/admin/departments",
+            },
+            {
               icon: "map-pin" as const,
               label: "Locations",
               path: "/(app)/office-locations",
@@ -472,7 +498,7 @@ export default function AdminDashboardScreen() {
               activeOpacity={0.75}
             >
               <View style={styles.quickIcon}>
-                <Feather name={icon} size={19} color={colors.teal[600]} />
+                <Feather name={icon} size={19} color={colors.bytecode[600]} />
               </View>
               <Text style={styles.quickLabel}>{label}</Text>
             </TouchableOpacity>
@@ -530,7 +556,7 @@ export default function AdminDashboardScreen() {
                   <Feather
                     name="arrow-right"
                     size={15}
-                    color={colors.teal[500]}
+                    color={colors.bytecode[500]}
                   />
                 </TouchableOpacity>
               </>
@@ -571,7 +597,7 @@ const styles = StyleSheet.create({
   },
 
   hero: {
-    backgroundColor: colors.teal[700],
+    backgroundColor: colors.bytecode[700],
     paddingHorizontal: 20,
     paddingTop: 18,
     paddingBottom: 24,
@@ -594,6 +620,11 @@ const styles = StyleSheet.create({
     lineHeight: 29,
     fontWeight: "800",
     color: "#FFFFFF",
+  },
+  heroActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
   },
   heroActionButton: {
     width: 38,
@@ -693,7 +724,11 @@ const styles = StyleSheet.create({
     color: colors.gray[900],
   },
   sectionActionBtn: { flexDirection: "row", alignItems: "center", gap: 2 },
-  sectionAction: { fontSize: 13, color: colors.teal[600], fontWeight: "700" },
+  sectionAction: {
+    fontSize: 13,
+    color: colors.bytecode[600],
+    fontWeight: "700",
+  },
 
   card: {
     backgroundColor: "#FFFFFF",
@@ -714,7 +749,11 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     gap: 7,
   },
-  viewMoreText: { fontSize: 12, fontWeight: "700", color: colors.teal[600] },
+  viewMoreText: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: colors.bytecode[600],
+  },
 
   empRow: { flexDirection: "row", gap: 10 },
   empCard: {
@@ -748,7 +787,7 @@ const styles = StyleSheet.create({
     width: 43,
     height: 43,
     borderRadius: 14,
-    backgroundColor: colors.teal[50],
+    backgroundColor: colors.bytecode[50],
     alignItems: "center",
     justifyContent: "center",
   },
@@ -810,7 +849,7 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 5,
     minHeight: 4,
   },
-  presentBar: { backgroundColor: colors.teal[400] },
+  presentBar: { backgroundColor: colors.bytecode[400] },
   absentBar: { backgroundColor: colors.red[400] },
   chartMonth: {
     fontSize: 9,
@@ -835,7 +874,7 @@ const styles = StyleSheet.create({
   deptTrack: {
     height: 6,
     borderRadius: 4,
-    backgroundColor: colors.teal[50],
+    backgroundColor: colors.bytecode[50],
     overflow: "hidden",
   },
   deptFill: { height: 6, borderRadius: 4, minWidth: 4 },
@@ -896,7 +935,7 @@ const styles = StyleSheet.create({
     marginTop: 16,
     paddingHorizontal: 24,
     paddingVertical: 12,
-    backgroundColor: colors.teal[600],
+    backgroundColor: colors.bytecode[600],
     borderRadius: 12,
   },
   retryLabel: { color: "#FFFFFF", fontWeight: "800" },

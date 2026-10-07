@@ -10,7 +10,7 @@ import Feather from "@expo/vector-icons/Feather";
 import { useRouter } from "expo-router";
 import { colors } from "@/components/ui/theme";
 
-type HeaderVariant = "teal" | "white";
+type HeaderVariant = "bytecode" | "white";
 type BackIcon = "arrow-left" | "x";
 
 export interface HeaderAction {
@@ -44,8 +44,8 @@ const CONFIG: Record<
     iconBg: string;
   }
 > = {
-  teal: {
-    bg: colors.teal[700],
+  bytecode: {
+    bg: colors.bytecode[700],
     titleColor: "#fff",
     iconColor: "#fff",
     iconBg: "rgba(255,255,255,0.15)",
@@ -102,14 +102,16 @@ export function PageHeader({
           <View
             style={[
               s.textActionBtn,
-              variant === "teal" && s.textActionBtnTeal,
+              variant === "bytecode" && s.textActionBtnbytecode,
               rightTextAction.disabled && s.textActionBtnDisabled,
             ]}
           >
             <Text
               style={[
                 s.textActionLabel,
-                { color: variant === "teal" ? "#fff" : colors.teal[700] },
+                {
+                  color: variant === "bytecode" ? "#fff" : colors.bytecode[700],
+                },
               ]}
             >
               {rightTextAction.label}
@@ -176,7 +178,7 @@ const s = StyleSheet.create({
     borderColor: "rgba(255,255,255,0.2)",
     backgroundColor: "rgba(255,255,255,0.18)",
   },
-  textActionBtnTeal: {
+  textActionBtnbytecode: {
     // already set above, kept separate so white variant can override
   },
   textActionBtnDisabled: { opacity: 0.5 },

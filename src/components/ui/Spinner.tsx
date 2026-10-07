@@ -10,7 +10,7 @@ interface Props {
 
 export function Spinner({
   size = "large",
-  color = colors.teal[600],
+  color = colors.bytecode[600],
   fullScreen,
 }: Props) {
   if (fullScreen) {

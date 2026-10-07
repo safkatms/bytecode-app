@@ -25,7 +25,7 @@ export function Button({
   disabled,
   ...props
 }: Props) {
-  const bg = color ?? colors.teal[600];
+  const bg = color ?? colors.bytecode[600];
   return (
     <TouchableOpacity
       style={[

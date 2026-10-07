@@ -34,8 +34,8 @@ const STATUS_COLOR: Record<AttendanceStatus, string> = {
   absent: colors.red[500],
   late: colors.orange[500],
   half_day: colors.amber[500],
-  on_leave: colors.teal[500],
-  holiday: colors.teal[700],
+  on_leave: colors.bytecode[500],
+  holiday: colors.bytecode[700],
   weekend: colors.gray[400],
 };
 const STATUS_LABEL: Record<AttendanceStatus, string> = {
@@ -231,7 +231,7 @@ export default function AdminAttendanceScreen() {
     <View style={[s.root, { paddingTop: insets.top }]}>
       <PageHeader
         title="Attendance"
-        variant="teal"
+        variant="bytecode"
         rightActions={[
           {
             icon: "plus",
@@ -247,7 +247,7 @@ export default function AdminAttendanceScreen() {
           hitSlop={8}
           style={s.navBtn}
         >
-          <Feather name="chevron-left" size={20} color={colors.teal[600]} />
+          <Feather name="chevron-left" size={20} color={colors.bytecode[600]} />
         </TouchableOpacity>
         <TouchableOpacity
           onPress={() => {
@@ -270,7 +270,9 @@ export default function AdminAttendanceScreen() {
             name="chevron-right"
             size={20}
             color={
-              selectedDate >= todayStr() ? colors.gray[300] : colors.teal[600]
+              selectedDate >= todayStr()
+                ? colors.gray[300]
+                : colors.bytecode[600]
             }
           />
         </TouchableOpacity>
@@ -344,7 +346,7 @@ export default function AdminAttendanceScreen() {
             <RefreshControl
               refreshing={isRefetching}
               onRefresh={refetch}
-              tintColor={colors.teal[600]}
+              tintColor={colors.bytecode[600]}
             />
           }
           ListEmptyComponent={
@@ -372,7 +374,7 @@ export default function AdminAttendanceScreen() {
                   <Feather
                     name="chevron-left"
                     size={18}
-                    color={page === 1 ? colors.gray[300] : colors.teal[600]}
+                    color={page === 1 ? colors.gray[300] : colors.bytecode[600]}
                   />
                 </TouchableOpacity>
                 <Text style={s.pageLabel}>
@@ -391,7 +393,7 @@ export default function AdminAttendanceScreen() {
                     color={
                       page === meta.totalPages
                         ? colors.gray[300]
-                        : colors.teal[600]
+                        : colors.bytecode[600]
                     }
                   />
                 </TouchableOpacity>
@@ -427,7 +429,7 @@ const s = StyleSheet.create({
   },
   todayHint: {
     fontSize: 10,
-    color: colors.teal[400],
+    color: colors.bytecode[400],
     textAlign: "center",
     marginTop: 1,
   },
@@ -458,11 +460,11 @@ const s = StyleSheet.create({
     backgroundColor: "#fff",
   },
   chipActive: {
-    borderColor: colors.teal[500],
-    backgroundColor: colors.teal[50],
+    borderColor: colors.bytecode[500],
+    backgroundColor: colors.bytecode[50],
   },
   chipText: { fontSize: 12, fontWeight: "600", color: colors.gray[500] },
-  chipTextActive: { color: colors.teal[700] },
+  chipTextActive: { color: colors.bytecode[700] },
 
   searchRow: {
     flexDirection: "row",
@@ -521,7 +523,7 @@ const s = StyleSheet.create({
     marginLeft: 8,
     fontSize: 12,
     fontWeight: "700",
-    color: colors.teal[700],
+    color: colors.bytecode[700],
   },
   deleteBtn: { padding: 14 },
 
@@ -541,7 +543,7 @@ const s = StyleSheet.create({
     borderRadius: 10,
     backgroundColor: "#fff",
     borderWidth: 1,
-    borderColor: colors.teal[100],
+    borderColor: colors.bytecode[100],
     alignItems: "center",
     justifyContent: "center",
   },

@@ -1,4 +1,4 @@
-// app/(app)/admin/employees/index.tsx
+// app/(app)/admin/departments/index.tsx
 
 import React, { useState } from "react";
 import {
@@ -7,6 +7,7 @@ import {
   FlatList,
   TouchableOpacity,
   StyleSheet,
+  TextInput,
   RefreshControl,
   Alert,
 } from "react-native";
@@ -15,42 +16,57 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Feather from "@expo/vector-icons/Feather";
 import {
-  adminListEmployees,
-  adminToggleEmployee,
-  adminDeleteEmployee,
-} from "@/lib/api/attendance.api";
+  adminListDepartments,
+  adminDeleteDepartment,
+  adminUpdateDepartment,
+} from "@/lib/api/department.api";
 import { colors } from "@/components/ui/theme";
 import { Spinner } from "@/components/ui/Spinner";
 import { PageHeader } from "@/components/ui/PageHeader";
-import type { Employee } from "@/types/attendance";
+import type { Department } from "@/types/attendance";
 
-function EmployeeRow({
-  emp,
-  onPress,
+function DepartmentRow({
+  dept,
+  onEdit,
   onToggle,
   onDelete,
 }: {
-  emp: Employee;
-  onPress: () => void;
+  dept: Department;
+  onEdit: () => void;
   onToggle: () => void;
   onDelete: () => void;
 }) {
-  const initials =
-    `${emp.user.firstName?.[0] ?? ""}${emp.user.lastName?.[0] ?? ""}` || "?";
+  const initials = dept.name.slice(0, 2).toUpperCase();
   return (
-    <TouchableOpacity style={s.row} onPress={onPress} activeOpacity={0.7}>
-      <View style={s.rowAvatar}>
-        <Text style={s.rowInitials}>{initials}</Text>
+    <View style={s.row}>
+      <View
+        style={[
+          s.rowIcon,
+          {
+            backgroundColor: dept.isActive
+              ? colors.bytecode[50]
+              : colors.gray[100],
+          },
+        ]}
+      >
+        <Text
+          style={[
+            s.rowInitials,
+            { color: dept.isActive ? colors.bytecode[700] : colors.gray[400] },
+          ]}
+        >
+          {initials}
+        </Text>
       </View>
       <View style={s.rowInfo}>
         <Text style={s.rowName} numberOfLines={1}>
-          {emp.user.firstName} {emp.user.lastName}
+          {dept.name}
         </Text>
-        <Text style={s.rowCode}>
-          {emp.employeeCode}
-          {emp.department?.name ? ` · ${emp.department.name}` : ""}
-        </Text>
-        {emp.designation && <Text style={s.rowDesig}>{emp.designation}</Text>}
+        {dept.description ? (
+          <Text style={s.rowDesc} numberOfLines={1}>
+            {dept.description}
+          </Text>
+        ) : null}
       </View>
       <View style={s.rowRight}>
         <TouchableOpacity
@@ -58,7 +74,9 @@ function EmployeeRow({
           style={[
             s.activeBadge,
             {
-              backgroundColor: emp.isActive ? colors.green[50] : colors.red[50],
+              backgroundColor: dept.isActive
+                ? colors.green[50]
+                : colors.red[50],
             },
           ]}
         >
@@ -66,7 +84,7 @@ function EmployeeRow({
             style={[
               s.activeDot,
               {
-                backgroundColor: emp.isActive
+                backgroundColor: dept.isActive
                   ? colors.green[500]
                   : colors.red[400],
               },
@@ -75,72 +93,100 @@ function EmployeeRow({
           <Text
             style={[
               s.activeText,
-              { color: emp.isActive ? colors.green[700] : colors.red[500] },
+              { color: dept.isActive ? colors.green[700] : colors.red[500] },
             ]}
           >
-            {emp.isActive ? "Active" : "Inactive"}
+            {dept.isActive ? "Active" : "Inactive"}
           </Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={onDelete} hitSlop={8}>
-          <Feather name="trash-2" size={15} color={colors.red[300]} />
-        </TouchableOpacity>
+        <View style={s.rowActions}>
+          <TouchableOpacity onPress={onEdit} hitSlop={8} style={s.actionBtn}>
+            <Feather name="edit-2" size={14} color={colors.bytecode[600]} />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={onDelete} hitSlop={8} style={s.actionBtn}>
+            <Feather name="trash-2" size={14} color={colors.red[400]} />
+          </TouchableOpacity>
+        </View>
       </View>
-    </TouchableOpacity>
+    </View>
   );
 }
 
-export default function AdminEmployeesScreen() {
+export default function AdminDepartmentsScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const qc = useQueryClient();
   const [page, setPage] = useState(1);
+  const [search, setSearch] = useState("");
 
   const { data, isLoading, refetch, isRefetching } = useQuery({
-    queryKey: ["admin-employees", page],
-    queryFn: () => adminListEmployees({ page, limit: 20 }),
+    queryKey: ["admin-departments", page, search],
+    queryFn: () =>
+      adminListDepartments({ page, limit: 20, search: search || undefined }),
   });
 
   const toggleMut = useMutation({
-    mutationFn: adminToggleEmployee,
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-employees"] }),
+    mutationFn: ({ id, isActive }: { id: number; isActive: boolean }) =>
+      adminUpdateDepartment(id, { isActive: !isActive }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-departments"] }),
+    onError: () => Alert.alert("Error", "Failed to update department"),
   });
 
   const deleteMut = useMutation({
-    mutationFn: adminDeleteEmployee,
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-employees"] }),
-    onError: () => Alert.alert("Error", "Failed to delete employee"),
+    mutationFn: adminDeleteDepartment,
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-departments"] }),
+    onError: () => Alert.alert("Error", "Failed to delete department"),
   });
 
-  function confirmDelete(emp: Employee) {
+  function confirmDelete(dept: Department) {
     Alert.alert(
-      "Delete Employee",
-      `Remove ${emp.user.firstName} ${emp.user.lastName}?`,
+      "Delete Department",
+      `Remove "${dept.name}"? This cannot be undone.`,
       [
         { text: "Cancel", style: "cancel" },
         {
           text: "Delete",
           style: "destructive",
-          onPress: () => deleteMut.mutate(emp.id),
+          onPress: () => deleteMut.mutate(dept.id),
         },
       ],
     );
   }
 
-  const employees = data?.data ?? [];
+  const departments = data?.data ?? [];
   const meta = data?.meta;
 
   return (
     <View style={[s.root, { paddingTop: insets.top }]}>
       <PageHeader
-        title="Employees"
+        title="Departments"
         variant="bytecode"
         rightActions={[
           {
-            icon: "user-plus",
-            onPress: () => router.push("/(app)/admin/employees/form"),
+            icon: "plus",
+            onPress: () => router.push("/(app)/admin/departments/form"),
           },
         ]}
       />
+
+      <View style={s.searchRow}>
+        <Feather name="search" size={14} color={colors.gray[400]} />
+        <TextInput
+          style={s.searchInput}
+          placeholder="Search departments…"
+          placeholderTextColor={colors.gray[300]}
+          value={search}
+          onChangeText={(v) => {
+            setSearch(v);
+            setPage(1);
+          }}
+        />
+        {search ? (
+          <TouchableOpacity onPress={() => setSearch("")} hitSlop={8}>
+            <Feather name="x" size={14} color={colors.gray[400]} />
+          </TouchableOpacity>
+        ) : null}
+      </View>
 
       {isLoading ? (
         <View style={s.center}>
@@ -148,7 +194,7 @@ export default function AdminEmployeesScreen() {
         </View>
       ) : (
         <FlatList
-          data={employees}
+          data={departments}
           keyExtractor={(i) => String(i.id)}
           contentContainerStyle={s.list}
           showsVerticalScrollIndicator={false}
@@ -161,16 +207,23 @@ export default function AdminEmployeesScreen() {
           }
           ListEmptyComponent={
             <View style={s.empty}>
-              <Feather name="users" size={36} color={colors.gray[300]} />
-              <Text style={s.emptyText}>No employees found</Text>
+              <Feather name="briefcase" size={36} color={colors.gray[300]} />
+              <Text style={s.emptyText}>No departments found</Text>
             </View>
           }
           ItemSeparatorComponent={() => <View style={{ height: 8 }} />}
           renderItem={({ item }) => (
-            <EmployeeRow
-              emp={item}
-              onPress={() => router.push(`/(app)/admin/employees/${item.id}`)}
-              onToggle={() => toggleMut.mutate(item.id)}
+            <DepartmentRow
+              dept={item}
+              onEdit={() =>
+                router.push({
+                  pathname: "/(app)/admin/departments/form",
+                  params: { id: item.id },
+                })
+              }
+              onToggle={() =>
+                toggleMut.mutate({ id: item.id, isActive: item.isActive })
+              }
               onDelete={() => confirmDelete(item)}
             />
           )}
@@ -244,19 +297,17 @@ const s = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.gray[100],
   },
-  rowAvatar: {
+  rowIcon: {
     width: 44,
     height: 44,
-    borderRadius: 22,
-    backgroundColor: colors.bytecode[100],
+    borderRadius: 13,
     alignItems: "center",
     justifyContent: "center",
   },
-  rowInitials: { fontSize: 15, fontWeight: "800", color: colors.bytecode[700] },
+  rowInitials: { fontSize: 14, fontWeight: "800" },
   rowInfo: { flex: 1 },
   rowName: { fontSize: 14, fontWeight: "800", color: colors.gray[900] },
-  rowCode: { fontSize: 12, color: colors.gray[400], marginTop: 2 },
-  rowDesig: { fontSize: 12, color: colors.gray[400] },
+  rowDesc: { fontSize: 12, color: colors.gray[400], marginTop: 2 },
   rowRight: { alignItems: "flex-end", gap: 8 },
   activeBadge: {
     flexDirection: "row",
@@ -268,6 +319,15 @@ const s = StyleSheet.create({
   },
   activeDot: { width: 6, height: 6, borderRadius: 3 },
   activeText: { fontSize: 11, fontWeight: "700" },
+  rowActions: { flexDirection: "row", gap: 4 },
+  actionBtn: {
+    width: 30,
+    height: 30,
+    borderRadius: 8,
+    backgroundColor: colors.gray[50],
+    alignItems: "center",
+    justifyContent: "center",
+  },
   empty: { alignItems: "center", paddingTop: 60, gap: 10 },
   emptyText: { fontSize: 14, color: colors.gray[400] },
   pagination: {

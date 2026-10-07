@@ -57,7 +57,8 @@ export interface Employee {
     id: number;
     userId: number;
     employeeCode: string;
-    department: string | null;
+    departmentId: number | null;
+    department: { id: number; name: string } | null;
     designation: string | null;
     joiningDate: string;
     isActive: boolean;
@@ -92,6 +93,22 @@ export interface OfficeLocation {
     createdAt: string;
 }
 
+export interface Department {
+    id: number;
+    name: string;
+    description: string | null;
+    isActive: boolean;
+    createdAt: string;
+    updatedAt: string;
+    createdById: number | null;
+}
+
+export interface DepartmentFilter {
+    page?: number;
+    limit?: number;
+    search?: string;
+}
+
 export interface AttendanceFilter {
     page?: number;
     limit?: number;
@@ -105,6 +122,5 @@ export interface AttendanceFilter {
 export interface EmployeeFilter {
     page?: number;
     limit?: number;
-    department?: string;
-    search?: string;
+    departmentId?: number;
 }

@@ -38,14 +38,16 @@ function LocationRow({
         style={[
           s.rowIcon,
           {
-            backgroundColor: loc.isActive ? colors.teal[50] : colors.gray[100],
+            backgroundColor: loc.isActive
+              ? colors.bytecode[50]
+              : colors.gray[100],
           },
         ]}
       >
         <Feather
           name="map-pin"
           size={18}
-          color={loc.isActive ? colors.teal[600] : colors.gray[400]}
+          color={loc.isActive ? colors.bytecode[600] : colors.gray[400]}
         />
       </View>
       <View style={s.rowInfo}>
@@ -65,7 +67,7 @@ function LocationRow({
       </View>
       <View style={s.rowActions}>
         <TouchableOpacity onPress={onEdit} hitSlop={8} style={s.actionBtn}>
-          <Feather name="edit-2" size={15} color={colors.teal[600]} />
+          <Feather name="edit-2" size={15} color={colors.bytecode[600]} />
         </TouchableOpacity>
         <TouchableOpacity onPress={onDelete} hitSlop={8} style={s.actionBtn}>
           <Feather name="trash-2" size={15} color={colors.red[400]} />
@@ -115,7 +117,7 @@ export default function AdminLocationsScreen() {
     <View style={[s.root, { paddingTop: insets.top }]}>
       <PageHeader
         title="Office Locations"
-        variant="teal"
+        variant="bytecode"
         rightActions={[
           {
             icon: "plus",
@@ -148,7 +150,7 @@ export default function AdminLocationsScreen() {
             <RefreshControl
               refreshing={isRefetching}
               onRefresh={refetch}
-              tintColor={colors.teal[600]}
+              tintColor={colors.bytecode[600]}
             />
           }
           ListEmptyComponent={

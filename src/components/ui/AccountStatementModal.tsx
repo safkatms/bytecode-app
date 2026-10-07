@@ -160,7 +160,7 @@ export function AccountStatementModal({ account, visible, onClose }: Props) {
           </View>
           <TouchableOpacity onPress={onClose} hitSlop={8}>
             <View style={s.closeBtn}>
-              <Feather name="x" size={16} color={colors.teal[700]} />
+              <Feather name="x" size={16} color={colors.bytecode[700]} />
             </View>
           </TouchableOpacity>
         </View>
@@ -190,7 +190,11 @@ export function AccountStatementModal({ account, visible, onClose }: Props) {
                 style={s.datePicker}
                 onPress={() => setPickerTarget("from")}
               >
-                <Feather name="calendar" size={14} color={colors.teal[600]} />
+                <Feather
+                  name="calendar"
+                  size={14}
+                  color={colors.bytecode[600]}
+                />
                 <View>
                   <Text style={s.datePickerLabel}>From</Text>
                   <Text style={s.datePickerValue}>
@@ -203,7 +207,11 @@ export function AccountStatementModal({ account, visible, onClose }: Props) {
                 style={s.datePicker}
                 onPress={() => setPickerTarget("to")}
               >
-                <Feather name="calendar" size={14} color={colors.teal[600]} />
+                <Feather
+                  name="calendar"
+                  size={14}
+                  color={colors.bytecode[600]}
+                />
                 <View>
                   <Text style={s.datePickerLabel}>To</Text>
                   <Text style={s.datePickerValue}>{displayFmt(customTo)}</Text>
@@ -235,7 +243,7 @@ export function AccountStatementModal({ account, visible, onClose }: Props) {
             </View>
           ) : isLoading ? (
             <View style={s.loadingBox}>
-              <ActivityIndicator color={colors.teal[500]} />
+              <ActivityIndicator color={colors.bytecode[500]} />
             </View>
           ) : isError ? (
             <View style={s.loadingBox}>
@@ -262,7 +270,7 @@ export function AccountStatementModal({ account, visible, onClose }: Props) {
                 <SummaryCard
                   label="Closing"
                   value={fmtAmount(data.closingBalance)}
-                  color={colors.teal[700]}
+                  color={colors.bytecode[700]}
                 />
               </View>
               <View style={s.rowCountBox}>
@@ -332,7 +340,7 @@ const s = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 10,
-    backgroundColor: colors.teal[50],
+    backgroundColor: colors.bytecode[50],
     alignItems: "center",
     justifyContent: "center",
   },
@@ -356,11 +364,11 @@ const s = StyleSheet.create({
     backgroundColor: "#fff",
   },
   chipActive: {
-    borderColor: colors.teal[500],
-    backgroundColor: colors.teal[50],
+    borderColor: colors.bytecode[500],
+    backgroundColor: colors.bytecode[50],
   },
   chipText: { fontSize: 13, fontWeight: "600", color: colors.gray[600] },
-  chipTextActive: { color: colors.teal[700] },
+  chipTextActive: { color: colors.bytecode[700] },
 
   customRow: {
     flexDirection: "row",
@@ -375,7 +383,7 @@ const s = StyleSheet.create({
     gap: 8,
     backgroundColor: colors.gray[50],
     borderWidth: 1.5,
-    borderColor: colors.teal[100],
+    borderColor: colors.bytecode[100],
     borderRadius: 12,
     paddingHorizontal: 12,
     paddingVertical: 10,
@@ -428,7 +436,7 @@ const s = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
-    backgroundColor: colors.teal[600],
+    backgroundColor: colors.bytecode[600],
     borderRadius: 14,
     paddingVertical: 14,
     marginTop: 16,

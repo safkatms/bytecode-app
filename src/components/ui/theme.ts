@@ -85,7 +85,19 @@ export const colors = {
     700: '#B45309',
     800: '#92400E',
     900: '#78350F',
-  }
+  },
+  bytecode: {
+    50: '#E6F7FF',
+    100: '#B3E5FF',
+    200: '#80D4FF',
+    300: '#4DC2FF',
+    400: '#1AB0FF',
+    500: '#00A3E0',
+    600: '#0080B3',
+    700: '#005C80',
+    800: '#00394D',
+    900: '#002633',
+  },
 } as const;
 
 export type Colors = typeof colors;

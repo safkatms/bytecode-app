@@ -19,16 +19,6 @@ export function BottomNav() {
             label: "Attendance",
             icon: "clock",
           },
-          {
-            href: "/(app)/admin/employees",
-            label: "Employees",
-            icon: "user-check",
-          },
-          {
-            href: "/(app)/admin/locations",
-            label: "Locations",
-            icon: "map-pin",
-          },
         ]
       : []),
   ];
@@ -55,7 +45,7 @@ export function BottomNav() {
             <Feather
               name={icon as any}
               size={22}
-              color={active ? colors.teal[600] : colors.gray[400]}
+              color={active ? colors.bytecode[600] : colors.gray[400]}
             />
             <Text
               style={[
@@ -86,6 +76,6 @@ const styles = StyleSheet.create({
     gap: 3,
   },
   label: { fontSize: 10, fontWeight: "500" },
-  labelActive: { color: colors.teal[600] },
+  labelActive: { color: colors.bytecode[600] },
   labelInactive: { color: colors.gray[400] },
 });

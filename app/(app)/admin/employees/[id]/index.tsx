@@ -18,7 +18,9 @@ import {
   adminToggleEmployee,
   adminGetDevices,
   adminRevokeDevice,
+  adminUnrevokeDevice,
 } from "@/lib/api/attendance.api";
+import { getApiErrorMessage } from "@/lib/api-error";
 import { colors } from "@/components/ui/theme";
 import { Spinner } from "@/components/ui/Spinner";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -27,9 +29,11 @@ import type { TrustedDevice } from "@/types/attendance";
 function DeviceRow({
   device,
   onRevoke,
+  onUnrevoke,
 }: {
   device: TrustedDevice;
   onRevoke: () => void;
+  onUnrevoke: () => void;
 }) {
   return (
     <View style={s.deviceRow}>
@@ -37,19 +41,34 @@ function DeviceRow({
         <Feather
           name="smartphone"
           size={16}
-          color={device.isActive ? colors.teal[600] : colors.gray[400]}
+          color={device.isActive ? colors.bytecode[600] : colors.gray[400]}
         />
       </View>
       <View style={s.deviceInfo}>
         <Text style={s.deviceName}>{device.deviceName ?? device.deviceId}</Text>
         <Text style={s.deviceMeta}>
-          Last seen: {new Date(device.lastSeenAt).toLocaleDateString()}
+          Last seen:{" "}
+          {new Date(device.lastSeenAt).toLocaleString("en-BD", {
+            day: "numeric",
+            month: "short",
+            year: "numeric",
+            hour: "numeric",
+            minute: "numeric",
+          })}
           {!device.isActive && "  · Revoked"}
         </Text>
       </View>
-      {device.isActive && (
+      {device.isActive ? (
         <TouchableOpacity onPress={onRevoke} style={s.revokeBtn} hitSlop={8}>
           <Text style={s.revokeBtnText}>Revoke</Text>
+        </TouchableOpacity>
+      ) : (
+        <TouchableOpacity
+          onPress={onUnrevoke}
+          style={s.unrevokeBtn}
+          hitSlop={8}
+        >
+          <Text style={s.unrevokeBtnText}>Restore</Text>
         </TouchableOpacity>
       )}
     </View>
@@ -86,6 +105,17 @@ export default function AdminEmployeeDetailScreen() {
     onError: () => Alert.alert("Error", "Failed to revoke device"),
   });
 
+  const unrevokeMut = useMutation({
+    mutationFn: adminUnrevokeDevice,
+    onSuccess: () =>
+      qc.invalidateQueries({ queryKey: ["admin-employee-devices", id] }),
+    onError: (err) =>
+      Alert.alert(
+        "Cannot Restore Device",
+        getApiErrorMessage(err, "Failed to restore device"),
+      ),
+  });
+
   function confirmRevoke(device: TrustedDevice) {
     Alert.alert(
       "Revoke Device",
@@ -116,7 +146,7 @@ export default function AdminEmployeeDetailScreen() {
     <View style={[s.root, { paddingTop: insets.top }]}>
       <PageHeader
         title="Employee Detail"
-        variant="teal"
+        variant="bytecode"
         rightActions={[
           {
             icon: "edit-2",
@@ -185,7 +215,7 @@ export default function AdminEmployeeDetailScreen() {
         <View style={s.infoCard}>
           {[
             ["Employee Code", emp.employeeCode],
-            ["Department", emp.department ?? "—"],
+            ["Department", emp.department?.name ?? "—"],
             ["Designation", emp.designation ?? "—"],
             [
               "Joining Date",
@@ -215,7 +245,7 @@ export default function AdminEmployeeDetailScreen() {
             }
           >
             <View style={s.actionIcon}>
-              <Feather name="calendar" size={17} color={colors.teal[600]} />
+              <Feather name="calendar" size={17} color={colors.bytecode[600]} />
             </View>
             <Text style={s.actionLabel}>View Attendance</Text>
             <Feather name="chevron-right" size={16} color={colors.gray[400]} />
@@ -236,6 +266,7 @@ export default function AdminEmployeeDetailScreen() {
                 <DeviceRow
                   device={device}
                   onRevoke={() => confirmRevoke(device)}
+                  onUnrevoke={() => unrevokeMut.mutate(device.id)}
                 />
                 {i < devices.length - 1 && <View style={s.sep} />}
               </React.Fragment>
@@ -264,11 +295,11 @@ const s = StyleSheet.create({
     width: 72,
     height: 72,
     borderRadius: 36,
-    backgroundColor: colors.teal[100],
+    backgroundColor: colors.bytecode[100],
     alignItems: "center",
     justifyContent: "center",
   },
-  avatarText: { fontSize: 26, fontWeight: "800", color: colors.teal[700] },
+  avatarText: { fontSize: 26, fontWeight: "800", color: colors.bytecode[700] },
   profileName: { fontSize: 20, fontWeight: "800", color: colors.gray[900] },
   profileEmail: { fontSize: 13, color: colors.gray[400] },
   profilePhone: { fontSize: 13, color: colors.gray[400] },
@@ -318,7 +349,7 @@ const s = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 10,
-    backgroundColor: colors.teal[50],
+    backgroundColor: colors.bytecode[50],
     alignItems: "center",
     justifyContent: "center",
   },
@@ -360,6 +391,17 @@ const s = StyleSheet.create({
     borderRadius: 8,
   },
   revokeBtnText: { fontSize: 12, fontWeight: "700", color: colors.red[600] },
+  unrevokeBtn: {
+    backgroundColor: colors.bytecode[50],
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 8,
+  },
+  unrevokeBtnText: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: colors.bytecode[700],
+  },
   emptyDevices: { alignItems: "center", padding: 24, gap: 8 },
   emptyDevicesText: { fontSize: 13, color: colors.gray[400] },
   sep: { height: 1, backgroundColor: colors.gray[100] },

@@ -6,6 +6,8 @@ import {
   TouchableOpacity,
   StyleSheet,
   ScrollView,
+  KeyboardAvoidingView,
+  Platform,
   ActivityIndicator,
 } from "react-native";
 import { useRouter } from "expo-router";
@@ -18,7 +20,8 @@ import { z } from "zod";
 import { changePassword } from "@/lib/api/auth.api";
 import { colors } from "@/components/ui/theme";
 import { getApiErrorMessage } from "@/lib/api-error";
-import { Alert } from "@/components/ui/Alert";
+import { AlertUI } from "@/components/ui/Alert";
+import { PageHeader } from "@/components/ui/PageHeader";
 
 const schema = z
   .object({
@@ -67,14 +70,11 @@ export default function ChangePasswordScreen() {
   };
 
   return (
-    <View style={[styles.root, { paddingTop: insets.top }]}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} hitSlop={8}>
-          <Feather name="arrow-left" size={22} color={colors.gray[900]} />
-        </TouchableOpacity>
-        <Text style={styles.title}>Change password</Text>
-        <View style={{ width: 22 }} />
-      </View>
+    <KeyboardAvoidingView
+      style={[styles.root, { paddingTop: insets.top }]}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+    >
+      <PageHeader title="Change Password" variant="bytecode" />
 
       <ScrollView
         contentContainerStyle={styles.content}
@@ -82,10 +82,10 @@ export default function ChangePasswordScreen() {
         showsVerticalScrollIndicator={false}
       >
         {success && (
-          <Alert message="Password changed successfully" type="success" />
+          <AlertUI message="Password changed successfully" type="success" />
         )}
 
-        {apiError && <Alert message={apiError} type="error" />}
+        {apiError && <AlertUI message={apiError} type="error" />}
 
         <View style={styles.card}>
           {/* Current Password */}
@@ -269,33 +269,22 @@ export default function ChangePasswordScreen() {
           )}
         </TouchableOpacity>
       </ScrollView>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.gray[50] },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    backgroundColor: "#fff",
-    borderBottomWidth: 1,
-    borderBottomColor: colors.gray[100],
-  },
-  title: { fontSize: 17, fontWeight: "800", color: colors.gray[900] },
   content: { padding: 16, gap: 14 },
   successBanner: {
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
-    backgroundColor: colors.teal[50],
+    backgroundColor: colors.bytecode[50],
     borderRadius: 12,
     padding: 13,
     borderWidth: 1,
-    borderColor: colors.teal[100],
+    borderColor: colors.bytecode[100],
   },
   successIcon: {
     width: 28,
@@ -305,7 +294,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  successText: { fontSize: 13, fontWeight: "700", color: colors.teal[700] },
+  successText: { fontSize: 13, fontWeight: "700", color: colors.bytecode[700] },
   errorBanner: {
     flexDirection: "row",
     alignItems: "center",
@@ -369,7 +358,7 @@ const styles = StyleSheet.create({
     width: 5,
     height: 5,
     borderRadius: 3,
-    backgroundColor: colors.teal[400],
+    backgroundColor: colors.bytecode[400],
   },
   hintText: { fontSize: 12, color: colors.gray[500], fontWeight: "500" },
   submitButton: {
@@ -377,7 +366,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
-    backgroundColor: colors.teal[600],
+    backgroundColor: colors.bytecode[600],
     borderRadius: 14,
     paddingVertical: 15,
   },

@@ -10,17 +10,48 @@ import {
   TouchableOpacity,
   Image,
 } from "react-native";
+import * as Device from "expo-device";
 import { useRouter } from "expo-router";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import * as SecureStore from "expo-secure-store";
 import { login } from "@/lib/auth";
 import { getApiErrorMessage } from "@/lib/api-error";
 import { useAuthStore } from "@/store/auth.store";
 import { colors } from "@/components/ui/theme";
 import Feather from "@expo/vector-icons/Feather";
 import { AlertUI } from "@/components/ui/Alert";
+
+const DEVICE_ID_KEY = "app_device_id";
+
+function uuidv4() {
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    return (c === "x" ? r : (r & 0x3) | 0x8).toString(16);
+  });
+}
+
+async function getOrCreateDeviceId(): Promise<string> {
+  try {
+    const stored = await SecureStore.getItemAsync(DEVICE_ID_KEY);
+    if (stored) return stored;
+    const id = uuidv4();
+    await SecureStore.setItemAsync(DEVICE_ID_KEY, id);
+    return id;
+  } catch {
+    return uuidv4();
+  }
+}
+
+function getDeviceName(): string {
+  return (
+    Device.deviceName ??
+    Device.modelName ??
+    `${Platform.OS === "ios" ? "iOS" : "Android"} Device`
+  );
+}
 const schema = z.object({
   email: z.string().email("Invalid email"),
   password: z.string().min(1, "Password is required"),
@@ -43,7 +74,14 @@ export default function LoginScreen() {
   const onSubmit = async (data: FormData) => {
     setError("");
     try {
-      const user = await login(data.email, data.password);
+      const [deviceId, deviceName] = await Promise.all([
+        getOrCreateDeviceId(),
+        Promise.resolve(getDeviceName()),
+      ]);
+      const user = await login(data.email, data.password, {
+        deviceId,
+        deviceName,
+      });
       setUser(user);
       setAuthenticated(true);
       if (user.mustChangePassword) {
@@ -69,9 +107,9 @@ export default function LoginScreen() {
         {/* Logo block */}
         <View style={styles.logoBlock}>
           <Image
-            source={require("../../../assets/finance-foreground.png")}
+            source={require("../../../assets/BYTECODE-Logo.png")}
             style={styles.logo}
-            resizeMode="contain"
+            resizeMode="cover"
           />
           <Text style={styles.logoSub}>Sign in to your account</Text>
         </View>
@@ -94,7 +132,11 @@ export default function LoginScreen() {
                     ]}
                   >
                     <View style={styles.inputPrefix}>
-                      <Feather name="mail" size={16} color={colors.teal[500]} />
+                      <Feather
+                        name="mail"
+                        size={16}
+                        color={colors.bytecode[500]}
+                      />
                     </View>
                     <TextInput
                       style={styles.textInput}
@@ -129,7 +171,11 @@ export default function LoginScreen() {
                     ]}
                   >
                     <View style={styles.inputPrefix}>
-                      <Feather name="lock" size={16} color={colors.teal[500]} />
+                      <Feather
+                        name="lock"
+                        size={16}
+                        color={colors.bytecode[500]}
+                      />
                     </View>
                     <TextInput
                       style={styles.textInput}
@@ -190,7 +236,7 @@ const styles = StyleSheet.create({
 
   // Logo
   logoBlock: { alignItems: "center", gap: 8 },
-  logo: { width: 160, height: 60 },
+  logo: { width: 300, height: 60 },
   logoSub: {
     fontSize: 13,
     color: colors.gray[400],
@@ -223,7 +269,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     borderWidth: 1.5,
-    borderColor: colors.teal[200],
+    borderColor: colors.bytecode[200],
     borderRadius: 14,
     overflow: "hidden",
     backgroundColor: "#FAFAFE",
@@ -237,7 +283,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     borderRightWidth: 1,
-    borderRightColor: colors.teal[100],
+    borderRightColor: colors.bytecode[100],
   },
   inputSuffix: {
     width: 44,
@@ -267,7 +313,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     height: 56,
     paddingHorizontal: 20,
-    backgroundColor: colors.teal[600],
+    backgroundColor: colors.bytecode[600],
     marginTop: 4,
   },
   submitBtnLabel: {
