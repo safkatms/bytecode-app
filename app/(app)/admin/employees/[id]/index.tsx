@@ -239,8 +239,11 @@ export default function AdminEmployeeDetailScreen() {
             style={s.actionItem}
             onPress={() =>
               router.push({
-                pathname: "/(app)/admin/attendance",
-                params: { employeeId: emp.id },
+                pathname: "/(app)/attendance/timesheet",
+                params: {
+                  employeeId: emp.id,
+                  employeeName: `${emp.user.firstName ?? ""} ${emp.user.lastName ?? ""}`.trim(),
+                },
               })
             }
           >

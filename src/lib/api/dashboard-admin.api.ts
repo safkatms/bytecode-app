@@ -29,7 +29,7 @@ export interface RecentActivityItem {
     id: number;
     employee: string;
     employeeCode: string;
-    department: string | null;
+    department: { id: number; name: string } | string | null;
     date: string;
     status: string;
     checkInTime: string | null;
@@ -41,7 +41,7 @@ export interface LateReportItem {
     employee: {
         id: number;
         employeeCode: string;
-        department: string | null;
+        department: { id: number; name: string } | string | null;
         user: { firstName: string; lastName: string };
     };
     count: number;

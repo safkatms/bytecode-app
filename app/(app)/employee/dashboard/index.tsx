@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -11,15 +11,33 @@ import { useQuery } from "@tanstack/react-query";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import Feather from "@expo/vector-icons/Feather";
+import * as Location from "expo-location";
 import {
   getEmployeeOverview,
   getEmployeeAttendanceTrend,
 } from "@/lib/api/dashboard-employee.api";
+import { getOfficeLocation } from "@/lib/api/location.api";
 import { useAuthStore } from "@/store/auth.store";
 import { Spinner } from "@/components/ui/Spinner";
 import { AlertUI } from "@/components/ui/Alert";
 import { getApiErrorMessage } from "@/lib/api-error";
 import { colors } from "@/components/ui/theme";
+
+function haversineMeters(
+  lat1: number,
+  lon1: number,
+  lat2: number,
+  lon2: number,
+): number {
+  const R = 6371000;
+  const toRad = (d: number) => (d * Math.PI) / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
 
 const STATUS_COLOR: Record<string, string> = {
   present: colors.bytecode[500],
@@ -47,7 +65,7 @@ function SectionHeader({
   return (
     <View style={styles.sectionHeader}>
       <Text style={styles.sectionTitle}>{title}</Text>
-      {onPress && (
+      {/* {onPress && (
         <TouchableOpacity
           onPress={onPress}
           hitSlop={8}
@@ -60,7 +78,7 @@ function SectionHeader({
             color={colors.bytecode[500]}
           />
         </TouchableOpacity>
-      )}
+      )} */}
     </View>
   );
 }
@@ -87,87 +105,6 @@ function StatCard({
   );
 }
 
-function AttendanceTrendChart({
-  data,
-}: {
-  data: Array<{
-    month: string;
-    present: number;
-    absent: number;
-    late: number;
-    workHours: number;
-  }>;
-}) {
-  const max = Math.max(...data.flatMap((d) => [d.present, d.absent]), 1);
-  return (
-    <View style={styles.chartCard}>
-      <View style={styles.chartHeader}>
-        <View>
-          <Text style={styles.chartTitle}>Attendance trend</Text>
-          <Text style={styles.chartSubtitle}>Last 6 months</Text>
-        </View>
-        <View style={styles.chartLegend}>
-          <View style={styles.legendItem}>
-            <View
-              style={[
-                styles.legendDot,
-                { backgroundColor: colors.bytecode[400] },
-              ]}
-            />
-            <Text style={styles.legendText}>Present</Text>
-          </View>
-          <View style={styles.legendItem}>
-            <View
-              style={[styles.legendDot, { backgroundColor: colors.red[400] }]}
-            />
-            <Text style={styles.legendText}>Absent</Text>
-          </View>
-        </View>
-      </View>
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.chartScroll}
-      >
-        <View style={styles.chartArea}>
-          <View style={styles.chartGrid}>
-            {[0, 1, 2, 3].map((i) => (
-              <View key={i} style={styles.chartGridLine} />
-            ))}
-          </View>
-          <View style={styles.barsContainer}>
-            {data.map((item) => {
-              const presentH = Math.max((item.present / max) * 150, 4);
-              const absentH = Math.max((item.absent / max) * 150, 4);
-              return (
-                <View key={item.month} style={styles.chartColumn}>
-                  <View style={styles.barGroup}>
-                    <View
-                      style={[
-                        styles.bar,
-                        styles.presentBar,
-                        { height: presentH },
-                      ]}
-                    />
-                    <View
-                      style={[
-                        styles.bar,
-                        styles.absentBar,
-                        { height: absentH },
-                      ]}
-                    />
-                  </View>
-                  <Text style={styles.chartMonth}>{item.month.slice(5)}</Text>
-                </View>
-              );
-            })}
-          </View>
-        </View>
-      </ScrollView>
-    </View>
-  );
-}
-
 export default function EmployeeDashboardScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
@@ -182,6 +119,44 @@ export default function EmployeeDashboardScreen() {
     queryKey: ["employee-dashboard-trend"],
     queryFn: () => getEmployeeAttendanceTrend(6),
   });
+
+  const { data: officeLocation } = useQuery({
+    queryKey: ["office-location"],
+    queryFn: getOfficeLocation,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  type PresenceStatus = "at_office" | "away" | "no_location" | "checking";
+  const [presence, setPresence] = useState<PresenceStatus>("checking");
+
+  useEffect(() => {
+    if (!officeLocation) {
+      setPresence("no_location");
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== "granted") {
+        if (!cancelled) setPresence("away");
+        return;
+      }
+      const pos = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.Balanced,
+      });
+      if (cancelled) return;
+      const dist = haversineMeters(
+        pos.coords.latitude,
+        pos.coords.longitude,
+        Number(officeLocation.latitude),
+        Number(officeLocation.longitude),
+      );
+      setPresence(dist <= officeLocation.radiusMeters ? "at_office" : "away");
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [officeLocation]);
 
   if (isLoading)
     return (
@@ -331,10 +306,28 @@ export default function EmployeeDashboardScreen() {
               })}
             </Text>
           </View>
-          {thisMonth.totalLateMinutes > 0 && (
-            <Text style={styles.lateMinutesText}>
-              {thisMonth.totalLateMinutes} min late
-            </Text>
+          {presence !== "checking" && presence !== "no_location" && (
+            <View
+              style={[
+                styles.presenceBadge,
+                presence === "at_office"
+                  ? styles.presenceBadgeIn
+                  : styles.presenceBadgeOut,
+              ]}
+            >
+              <View
+                style={[
+                  styles.presenceDot,
+                  {
+                    backgroundColor:
+                      presence === "at_office" ? "#34D399" : "#F87171",
+                  },
+                ]}
+              />
+              <Text style={styles.presenceText}>
+                {presence === "at_office" ? "At office" : "Away"}
+              </Text>
+            </View>
           )}
         </View>
       </View>
@@ -396,13 +389,6 @@ export default function EmployeeDashboardScreen() {
             <Feather name="log-out" size={18} color="#fff" />
             <Text style={styles.checkInBtnLabel}>Check out</Text>
           </TouchableOpacity>
-        </View>
-      )}
-
-      {/* TREND CHART */}
-      {trend && trend.length > 0 && (
-        <View style={styles.section}>
-          <AttendanceTrendChart data={trend} />
         </View>
       )}
 
@@ -564,6 +550,18 @@ const styles = StyleSheet.create({
     color: "rgba(204,251,241,0.8)",
   },
   lateMinutesText: { fontSize: 11, fontWeight: "700", color: "#FCA5A5" },
+  presenceBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 20,
+  },
+  presenceBadgeIn: { backgroundColor: "rgba(52,211,153,0.15)" },
+  presenceBadgeOut: { backgroundColor: "rgba(248,113,113,0.15)" },
+  presenceDot: { width: 6, height: 6, borderRadius: 3 },
+  presenceText: { fontSize: 11, fontWeight: "700", color: "#fff" },
 
   section: { marginTop: 22, paddingHorizontal: 16, gap: 10 },
   sectionHeader: {

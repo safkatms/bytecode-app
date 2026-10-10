@@ -157,8 +157,8 @@ export default function SettingsScreen() {
     },
     {
       icon: "map-pin",
-      label: "Locations",
-      sublabel: "Create and manage locations",
+      label: "Location",
+      sublabel: "Set up office location",
       onPress: () => router.push("/(app)/admin/locations"),
       chevron: true,
     },

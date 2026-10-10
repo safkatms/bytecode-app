@@ -124,3 +124,45 @@ export interface EmployeeFilter {
     limit?: number;
     departmentId?: number;
 }
+
+export interface TodayStatus {
+    date: string;
+    status: AttendanceStatus | null;
+    checkInTime: string | null;
+    checkOutTime: string | null;
+    workHours: number | null;
+    lateMinutes: number;
+    checkedIn: boolean;
+    checkedOut: boolean;
+    isManual: boolean;
+}
+
+export interface WeeklyTimesheetDay {
+    id?: number;
+    date: string;
+    dayName: string;
+    status: AttendanceStatus | null;
+    checkInTime: string | null;
+    checkOutTime: string | null;
+    workHours: number | null;
+    lateMinutes: number;
+    isManual: boolean;
+    isWeekend: boolean;
+}
+
+export interface WeeklyTimesheet {
+    weekStart: string;
+    weekEnd: string;
+    days: WeeklyTimesheetDay[];
+    totalWorkHours: number;
+    presentDays: number;
+    lateDays: number;
+}
+
+export interface MyAttendanceFilter {
+    page?: number;
+    limit?: number;
+    fromDate?: string;
+    toDate?: string;
+    status?: AttendanceStatus;
+}

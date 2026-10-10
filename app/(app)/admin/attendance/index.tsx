@@ -10,7 +10,10 @@ import {
   Alert,
   TextInput,
   RefreshControl,
+  Modal,
+  Platform,
 } from "react-native";
+import DateTimePicker from "@react-native-community/datetimepicker";
 import { useRouter } from "expo-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -60,6 +63,13 @@ function fmt(iso: string | null) {
     minute: "2-digit",
   });
 }
+function fmtHours(h: number) {
+  const hrs = Math.floor(h);
+  const mins = Math.round((h - hrs) * 60);
+  if (hrs === 0) return `${mins}m`;
+  if (mins === 0) return `${hrs}h`;
+  return `${hrs}h ${mins}m`;
+}
 function fmtDate(iso: string) {
   return new Date(iso).toLocaleDateString("en-BD", {
     day: "numeric",
@@ -95,13 +105,22 @@ function DailySummaryBar({ items }: { items: DailySummaryItem[] }) {
   );
 }
 
+function deptName(dept: unknown): string {
+  if (!dept) return "";
+  if (typeof dept === "object" && dept !== null && "name" in dept)
+    return (dept as { name: string }).name;
+  return String(dept);
+}
+
 function RecordRow({
   item,
   onPress,
+  onEdit,
   onDelete,
 }: {
   item: AttendanceRecord;
   onPress: () => void;
+  onEdit: () => void;
   onDelete: () => void;
 }) {
   const color = STATUS_COLOR[item.status];
@@ -109,6 +128,7 @@ function RecordRow({
     ? `${item.employee.user.firstName ?? ""} ${item.employee.user.lastName ?? ""}`.trim() ||
       item.employee.employeeCode
     : `#${item.employeeId}`;
+  const dept = deptName(item.employee?.department);
   return (
     <TouchableOpacity style={s.row} onPress={onPress} activeOpacity={0.7}>
       <View style={[s.rowAccent, { backgroundColor: color }]} />
@@ -125,9 +145,7 @@ function RecordRow({
         </View>
         <View style={s.rowMeta}>
           <Text style={s.rowDate}>{fmtDate(item.attendanceDate)}</Text>
-          {item.employee?.department && (
-            <Text style={s.rowDept}>{item.employee.department}</Text>
-          )}
+          {dept ? <Text style={s.rowDept}>{dept}</Text> : null}
           {item.isManual && (
             <View style={s.manualBadge}>
               <Text style={s.manualText}>Manual</Text>
@@ -145,13 +163,18 @@ function RecordRow({
           />
           <Text style={s.rowTime}>{fmt(item.checkOutTime)}</Text>
           {item.workHours && (
-            <Text style={s.rowHours}>{Number(item.workHours).toFixed(1)}h</Text>
+            <Text style={s.rowHours}>{fmtHours(Number(item.workHours))}</Text>
           )}
         </View>
       </View>
-      <TouchableOpacity onPress={onDelete} hitSlop={8} style={s.deleteBtn}>
-        <Feather name="trash-2" size={15} color={colors.red[400]} />
-      </TouchableOpacity>
+      <View style={s.rowActions}>
+        <TouchableOpacity onPress={onEdit} hitSlop={8} style={s.editBtn}>
+          <Feather name="edit-2" size={15} color={colors.bytecode[500]} />
+        </TouchableOpacity>
+        <TouchableOpacity onPress={onDelete} hitSlop={8} style={s.deleteBtn}>
+          <Feather name="trash-2" size={15} color={colors.red[400]} />
+        </TouchableOpacity>
+      </View>
     </TouchableOpacity>
   );
 }
@@ -164,6 +187,7 @@ export default function AdminAttendanceScreen() {
   const [statusFilter, setStatusFilter] = useState<AttendanceStatus | "">("");
   const [search, setSearch] = useState("");
   const [selectedDate, setSelectedDate] = useState(todayStr());
+  const [showDatePicker, setShowDatePicker] = useState(false);
 
   const { data, isLoading, refetch, isRefetching } = useQuery({
     queryKey: ["admin-attendance", page, statusFilter, selectedDate],
@@ -205,6 +229,15 @@ export default function AdminAttendanceScreen() {
     const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
     setSelectedDate(iso);
     setPage(1);
+  }
+
+  function applyPickedDate(date?: Date) {
+    if (date) {
+      const iso = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+      setSelectedDate(iso);
+      setPage(1);
+    }
+    setShowDatePicker(false);
   }
 
   const records = data?.data ?? [];
@@ -249,21 +282,35 @@ export default function AdminAttendanceScreen() {
         >
           <Feather name="chevron-left" size={20} color={colors.bytecode[600]} />
         </TouchableOpacity>
-        <TouchableOpacity
-          onPress={() => {
-            setSelectedDate(todayStr());
-            setPage(1);
-          }}
-        >
-          <Text style={s.dateLabel}>{displayDate}</Text>
-          {selectedDate !== todayStr() && (
-            <Text style={s.todayHint}>Tap for today</Text>
-          )}
-        </TouchableOpacity>
+
+        <View style={s.dateLabelWrap}>
+          <TouchableOpacity
+            onPress={() => {
+              setSelectedDate(todayStr());
+              setPage(1);
+            }}
+            disabled={selectedDate === todayStr()}
+            hitSlop={8}
+          >
+            <Text style={s.dateLabel}>{displayDate}</Text>
+            {selectedDate !== todayStr() && (
+              <Text style={s.todayLink}>Back to current</Text>
+            )}
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={s.calBtn}
+            onPress={() => setShowDatePicker(true)}
+            hitSlop={8}
+          >
+            <Feather name="calendar" size={14} color={colors.bytecode[600]} />
+            <Text style={s.calBtnText}>Jump to date</Text>
+          </TouchableOpacity>
+        </View>
+
         <TouchableOpacity
           onPress={() => shiftDate(1)}
           hitSlop={8}
-          style={s.navBtn}
+          style={[s.navBtn, selectedDate >= todayStr() && s.navBtnOff]}
           disabled={selectedDate >= todayStr()}
         >
           <Feather
@@ -277,6 +324,57 @@ export default function AdminAttendanceScreen() {
           />
         </TouchableOpacity>
       </View>
+
+      {/* Android inline date picker */}
+      {showDatePicker && Platform.OS === "android" && (
+        <DateTimePicker
+          value={new Date(selectedDate)}
+          mode="date"
+          display="default"
+          maximumDate={new Date()}
+          onChange={(_, date) => applyPickedDate(date)}
+        />
+      )}
+
+      {/* iOS bottom-sheet date picker */}
+      {Platform.OS === "ios" && (
+        <Modal
+          visible={showDatePicker}
+          transparent
+          animationType="slide"
+          onRequestClose={() => setShowDatePicker(false)}
+        >
+          <TouchableOpacity
+            style={s.iosOverlay}
+            activeOpacity={1}
+            onPress={() => setShowDatePicker(false)}
+          />
+          <View style={s.iosSheet}>
+            <View style={s.iosSheetHandle} />
+            <Text style={s.iosSheetTitle}>Jump to date</Text>
+            <DateTimePicker
+              value={new Date(selectedDate)}
+              mode="date"
+              display="spinner"
+              maximumDate={new Date()}
+              onChange={(_, date) => {
+                if (date) {
+                  const iso = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+                  setSelectedDate(iso);
+                  setPage(1);
+                }
+              }}
+              style={{ width: "100%" }}
+            />
+            <TouchableOpacity
+              style={s.iosDoneBtn}
+              onPress={() => setShowDatePicker(false)}
+            >
+              <Text style={s.iosDoneTxt}>Done</Text>
+            </TouchableOpacity>
+          </View>
+        </Modal>
+      )}
 
       {/* Daily summary */}
       {dailySummary && dailySummary.length > 0 && (
@@ -359,6 +457,12 @@ export default function AdminAttendanceScreen() {
             <RecordRow
               item={item}
               onPress={() => router.push(`/(app)/admin/attendance/${item.id}`)}
+              onEdit={() =>
+                router.push({
+                  pathname: "/(app)/admin/attendance/[id]",
+                  params: { id: item.id, edit: "1" },
+                })
+              }
               onDelete={() => confirmDelete(item.id)}
             />
           )}
@@ -414,25 +518,26 @@ const s = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingVertical: 10,
     backgroundColor: "#fff",
-    borderBottomWidth: 1,
-    borderBottomColor: colors.gray[100],
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: colors.gray[100],
+    padding: 12,
+    marginHorizontal: 16,
+    marginVertical: 10,
   },
-  navBtn: { padding: 4 },
-  dateLabel: {
-    fontSize: 15,
-    fontWeight: "800",
-    color: colors.gray[900],
-    textAlign: "center",
+  navBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: colors.bytecode[50],
+    alignItems: "center",
+    justifyContent: "center",
   },
-  todayHint: {
-    fontSize: 10,
-    color: colors.bytecode[400],
-    textAlign: "center",
-    marginTop: 1,
-  },
+  navBtnOff: { backgroundColor: colors.gray[50] },
+  dateLabelWrap: { flex: 1, alignItems: "center", gap: 6 },
+  dateLabel: { fontSize: 15, fontWeight: "800", color: colors.gray[900], textAlign: "center" },
+  todayLink: { fontSize: 11, color: colors.bytecode[500], fontWeight: "600", textAlign: "center" },
 
   summaryBar: {
     flexDirection: "row",
@@ -525,7 +630,9 @@ const s = StyleSheet.create({
     fontWeight: "700",
     color: colors.bytecode[700],
   },
-  deleteBtn: { padding: 14 },
+  rowActions: { flexDirection: "row", alignItems: "center" },
+  editBtn: { padding: 10 },
+  deleteBtn: { padding: 10 },
 
   empty: { alignItems: "center", paddingTop: 60, gap: 10 },
   emptyText: { fontSize: 14, color: colors.gray[400] },
@@ -549,4 +656,55 @@ const s = StyleSheet.create({
   },
   pageBtnOff: { opacity: 0.4 },
   pageLabel: { fontSize: 13, fontWeight: "600", color: colors.gray[600] },
+
+  calBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  calBtnText: { fontSize: 11, fontWeight: "700", color: colors.bytecode[700] },
+
+  iosOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.35)",
+  },
+  iosSheet: {
+    backgroundColor: "#fff",
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    paddingHorizontal: 20,
+    paddingBottom: 36,
+    paddingTop: 12,
+    alignItems: "center",
+  },
+  iosSheetHandle: {
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: colors.gray[300],
+    marginBottom: 12,
+  },
+  iosSheetTitle: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: colors.gray[900],
+    marginBottom: 4,
+    alignSelf: "flex-start",
+  },
+  iosDoneBtn: {
+    marginTop: 8,
+    width: "100%",
+    height: 48,
+    borderRadius: 14,
+    backgroundColor: colors.bytecode[600],
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  iosDoneTxt: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: "#fff",
+  },
 });

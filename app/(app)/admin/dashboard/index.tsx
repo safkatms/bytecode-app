@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -11,6 +11,8 @@ import { useQuery } from "@tanstack/react-query";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import Feather from "@expo/vector-icons/Feather";
+import * as Location from "expo-location";
+import { getOfficeLocation } from "@/lib/api/location.api";
 import {
   getAdminOverview,
   getAdminAttendanceTrend,
@@ -27,6 +29,22 @@ import type {
   RecentActivityItem,
   LateReportItem,
 } from "@/lib/api/dashboard-admin.api";
+
+function haversineMeters(
+  lat1: number,
+  lon1: number,
+  lat2: number,
+  lon2: number,
+): number {
+  const R = 6371000;
+  const toRad = (d: number) => (d * Math.PI) / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
 
 function SectionHeader({
   title,
@@ -56,81 +74,9 @@ function SectionHeader({
   );
 }
 
-function TrendChart({
-  data,
-}: {
-  data: Array<{ month: string; present: number; absent: number; late: number }>;
-}) {
-  const max = Math.max(...data.flatMap((d) => [d.present, d.absent]), 1);
-  return (
-    <View style={styles.chartCard}>
-      <View style={styles.chartHeader}>
-        <View>
-          <Text style={styles.chartTitle}>Attendance trend</Text>
-          <Text style={styles.chartSubtitle}>
-            All employees · last 6 months
-          </Text>
-        </View>
-        <View style={styles.chartLegend}>
-          <View style={styles.legendItem}>
-            <View
-              style={[
-                styles.legendDot,
-                { backgroundColor: colors.bytecode[400] },
-              ]}
-            />
-            <Text style={styles.legendText}>Present</Text>
-          </View>
-          <View style={styles.legendItem}>
-            <View
-              style={[styles.legendDot, { backgroundColor: colors.red[400] }]}
-            />
-            <Text style={styles.legendText}>Absent</Text>
-          </View>
-        </View>
-      </View>
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.chartScroll}
-      >
-        <View style={styles.chartArea}>
-          <View style={styles.chartGrid}>
-            {[0, 1, 2, 3].map((i) => (
-              <View key={i} style={styles.chartGridLine} />
-            ))}
-          </View>
-          <View style={styles.barsContainer}>
-            {data.map((item) => {
-              const presentH = Math.max((item.present / max) * 150, 4);
-              const absentH = Math.max((item.absent / max) * 150, 4);
-              return (
-                <View key={item.month} style={styles.chartColumn}>
-                  <View style={styles.barGroup}>
-                    <View
-                      style={[
-                        styles.bar,
-                        styles.presentBar,
-                        { height: presentH },
-                      ]}
-                    />
-                    <View
-                      style={[
-                        styles.bar,
-                        styles.absentBar,
-                        { height: absentH },
-                      ]}
-                    />
-                  </View>
-                  <Text style={styles.chartMonth}>{item.month.slice(5)}</Text>
-                </View>
-              );
-            })}
-          </View>
-        </View>
-      </ScrollView>
-    </View>
-  );
+function deptName(d: { id: number; name: string } | string | null | undefined) {
+  if (!d) return "—";
+  return typeof d === "object" ? d.name : d;
 }
 
 function ActivityRow({ item }: { item: RecentActivityItem }) {
@@ -168,7 +114,7 @@ function ActivityRow({ item }: { item: RecentActivityItem }) {
           {item.employee}
         </Text>
         <Text style={styles.activityMeta}>
-          {item.department ?? "—"} · {fmtTime(item.checkInTime)}
+          {deptName(item.department)} · {fmtTime(item.checkInTime)}
           {item.isManual ? " · Manual" : ""}
         </Text>
       </View>
@@ -197,7 +143,7 @@ function LateRow({ item }: { item: LateReportItem }) {
           {item.employee.user.firstName} {item.employee.user.lastName}
         </Text>
         <Text style={styles.lateMeta}>
-          {item.employee.department ?? "—"} · {item.count} times
+          {deptName(item.employee.department)} · {item.count} times
         </Text>
       </View>
       <Text style={styles.lateTime}>{timeStr}</Text>
@@ -275,6 +221,45 @@ export default function AdminDashboardScreen() {
     queryKey: ["admin-dashboard-late"],
     queryFn: () => getAdminLateReport(),
   });
+
+  // ── Office presence ──────────────────────────────────────────────────────────
+  const { data: officeLocation } = useQuery({
+    queryKey: ["office-location"],
+    queryFn: getOfficeLocation,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  type PresenceStatus = "at_office" | "away" | "no_location" | "checking";
+  const [presence, setPresence] = useState<PresenceStatus>("checking");
+
+  useEffect(() => {
+    if (!officeLocation) {
+      setPresence("no_location");
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== "granted") {
+        if (!cancelled) setPresence("away");
+        return;
+      }
+      const pos = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.Balanced,
+      });
+      if (cancelled) return;
+      const dist = haversineMeters(
+        pos.coords.latitude,
+        pos.coords.longitude,
+        Number(officeLocation.latitude),
+        Number(officeLocation.longitude),
+      );
+      setPresence(dist <= officeLocation.radiusMeters ? "at_office" : "away");
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [officeLocation]);
 
   const handleRefresh = () => {
     refetch();
@@ -416,7 +401,29 @@ export default function AdminDashboardScreen() {
               })}
             </Text>
           </View>
-          <Text style={styles.notMarkedText}>{ta.notMarked} not marked</Text>
+          {presence !== "checking" && presence !== "no_location" && (
+            <View
+              style={[
+                styles.presenceBadge,
+                presence === "at_office"
+                  ? styles.presenceBadgeIn
+                  : styles.presenceBadgeOut,
+              ]}
+            >
+              <View
+                style={[
+                  styles.presenceDot,
+                  {
+                    backgroundColor:
+                      presence === "at_office" ? "#34D399" : "#F87171",
+                  },
+                ]}
+              />
+              <Text style={styles.presenceText}>
+                {presence === "at_office" ? "At office" : "Away"}
+              </Text>
+            </View>
+          )}
         </View>
       </View>
 
@@ -468,27 +475,23 @@ export default function AdminDashboardScreen() {
             {
               icon: "user-plus" as const,
               label: "Add Employee",
-              path: "/(app)/employees/create",
+              path: "/(app)/admin/employees/form",
             },
             {
               icon: "edit-2" as const,
               label: "Mark Attend.",
-              path: "/(app)/attendance/admin-mark",
+              path: "/(app)/admin/attendance/mark",
             },
             {
               icon: "briefcase" as const,
               label: "Departments",
               path: "/(app)/admin/departments",
             },
-            {
-              icon: "map-pin" as const,
-              label: "Locations",
-              path: "/(app)/office-locations",
-            },
+
             {
               icon: "bar-chart-2" as const,
               label: "Reports",
-              path: "/(app)/attendance/reports",
+              path: "/(app)/admin/attendance/reports",
             },
           ].map(({ icon, label, path }) => (
             <TouchableOpacity
@@ -505,13 +508,6 @@ export default function AdminDashboardScreen() {
           ))}
         </View>
       </View>
-
-      {/* TREND CHART */}
-      {trend && trend.length > 0 && (
-        <View style={styles.section}>
-          <TrendChart data={trend} />
-        </View>
-      )}
 
       {/* DEPARTMENT BREAKDOWN */}
       {deptData && deptData.length > 0 && (
@@ -710,6 +706,18 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: "rgba(252,165,165,0.9)",
   },
+  presenceBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 20,
+  },
+  presenceBadgeIn: { backgroundColor: "rgba(52,211,153,0.15)" },
+  presenceBadgeOut: { backgroundColor: "rgba(248,113,113,0.15)" },
+  presenceDot: { width: 6, height: 6, borderRadius: 3 },
+  presenceText: { fontSize: 11, fontWeight: "700", color: "#fff" },
 
   section: { marginTop: 22, paddingHorizontal: 16, gap: 10 },
   sectionHeader: {

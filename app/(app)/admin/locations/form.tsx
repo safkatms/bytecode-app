@@ -1,5 +1,3 @@
-// app/(app)/admin/locations/form.tsx
-
 import React, { useEffect } from "react";
 import {
   View,
@@ -10,7 +8,7 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from "react-native";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { useRouter } from "expo-router";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -18,10 +16,9 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Feather from "@expo/vector-icons/Feather";
 import {
-  adminCreateLocation,
-  adminUpdateLocation,
-  adminGetLocation,
-} from "@/lib/api/attendance.api";
+  getOfficeLocation,
+  adminSaveOfficeLocation,
+} from "@/lib/api/location.api";
 import { getApiErrorMessage } from "@/lib/api-error";
 import { colors } from "@/components/ui/theme";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -91,14 +88,11 @@ export default function AdminLocationFormScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const qc = useQueryClient();
-  const { id } = useLocalSearchParams<{ id?: string }>();
-  const isEdit = !!id;
   const [error, setError] = React.useState("");
 
-  const { data: existing, isLoading: loadingExisting } = useQuery({
-    queryKey: ["admin-location", id],
-    queryFn: () => adminGetLocation(Number(id)),
-    enabled: isEdit,
+  const { data: existing, isLoading } = useQuery({
+    queryKey: ["office-location"],
+    queryFn: getOfficeLocation,
   });
 
   const {
@@ -123,25 +117,21 @@ export default function AdminLocationFormScreen() {
   }, [existing]);
 
   const saveMut = useMutation({
-    mutationFn: (data: FormData) => {
-      const payload = {
+    mutationFn: (data: FormData) =>
+      adminSaveOfficeLocation({
         name: data.name,
         latitude: Number(data.latitude),
         longitude: Number(data.longitude),
         radiusMeters: Number(data.radiusMeters),
-      };
-      return isEdit
-        ? adminUpdateLocation(Number(id), payload)
-        : adminCreateLocation(payload);
-    },
+      }),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["admin-locations"] });
+      qc.invalidateQueries({ queryKey: ["office-location"] });
       router.back();
     },
     onError: (err) => setError(getApiErrorMessage(err)),
   });
 
-  if (isEdit && loadingExisting) {
+  if (isLoading) {
     return (
       <View style={[s.center, { paddingTop: insets.top }]}>
         <Spinner />
@@ -155,7 +145,7 @@ export default function AdminLocationFormScreen() {
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
       <PageHeader
-        title={isEdit ? "Edit Location" : "New Location"}
+        title="Office Location"
         variant="bytecode"
         rightTextAction={{
           label: saveMut.isPending ? "Saving…" : "Save",

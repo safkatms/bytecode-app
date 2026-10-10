@@ -1,14 +1,14 @@
 {
   "expo": {
-    "name": "Finance App",
-    "slug": "finance-expo",
+    "name": "ByteCode App",
+    "slug": "bytecode-expo",
     "version": "1.0.0",
     "orientation": "portrait",
-    "scheme": "finance-expo",
+    "scheme": "bytecode-expo",
     "platforms": ["ios", "android"],
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.finance-expo.app",
+      "bundleIdentifier": "com.bytecode-expo.app",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }

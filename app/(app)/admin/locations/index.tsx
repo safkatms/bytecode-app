@@ -1,150 +1,46 @@
-// app/(app)/admin/locations/index.tsx
-
 import React from "react";
 import {
   View,
   Text,
-  FlatList,
-  TouchableOpacity,
+  ScrollView,
   StyleSheet,
-  Alert,
+  TouchableOpacity,
   RefreshControl,
 } from "react-native";
 import { useRouter } from "expo-router";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Feather from "@expo/vector-icons/Feather";
-import {
-  adminListLocations,
-  adminDeleteLocation,
-} from "@/lib/api/attendance.api";
+import { getOfficeLocation } from "@/lib/api/location.api";
 import { colors } from "@/components/ui/theme";
 import { Spinner } from "@/components/ui/Spinner";
 import { PageHeader } from "@/components/ui/PageHeader";
-import type { OfficeLocation } from "@/types/attendance";
-
-function LocationRow({
-  loc,
-  onEdit,
-  onDelete,
-}: {
-  loc: OfficeLocation;
-  onEdit: () => void;
-  onDelete: () => void;
-}) {
-  return (
-    <View style={s.row}>
-      <View
-        style={[
-          s.rowIcon,
-          {
-            backgroundColor: loc.isActive
-              ? colors.bytecode[50]
-              : colors.gray[100],
-          },
-        ]}
-      >
-        <Feather
-          name="map-pin"
-          size={18}
-          color={loc.isActive ? colors.bytecode[600] : colors.gray[400]}
-        />
-      </View>
-      <View style={s.rowInfo}>
-        <Text style={s.rowName}>{loc.name}</Text>
-        <Text style={s.rowCoords}>
-          {Number(loc.latitude).toFixed(4)}, {Number(loc.longitude).toFixed(4)}
-        </Text>
-        <View style={s.rowMeta}>
-          <Feather name="disc" size={11} color={colors.gray[400]} />
-          <Text style={s.rowRadius}>{loc.radiusMeters}m radius</Text>
-          {!loc.isActive && (
-            <View style={s.inactiveBadge}>
-              <Text style={s.inactiveText}>Inactive</Text>
-            </View>
-          )}
-        </View>
-      </View>
-      <View style={s.rowActions}>
-        <TouchableOpacity onPress={onEdit} hitSlop={8} style={s.actionBtn}>
-          <Feather name="edit-2" size={15} color={colors.bytecode[600]} />
-        </TouchableOpacity>
-        <TouchableOpacity onPress={onDelete} hitSlop={8} style={s.actionBtn}>
-          <Feather name="trash-2" size={15} color={colors.red[400]} />
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
-}
 
 export default function AdminLocationsScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const qc = useQueryClient();
 
   const {
-    data: locations = [],
+    data: location,
     isLoading,
     refetch,
     isRefetching,
   } = useQuery({
-    queryKey: ["admin-locations"],
-    queryFn: adminListLocations,
+    queryKey: ["office-location"],
+    queryFn: getOfficeLocation,
   });
-
-  const deleteMut = useMutation({
-    mutationFn: adminDeleteLocation,
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-locations"] }),
-    onError: () => Alert.alert("Error", "Failed to delete location"),
-  });
-
-  function confirmDelete(loc: OfficeLocation) {
-    Alert.alert(
-      "Delete Location",
-      `Remove "${loc.name}"? Employees won't be able to check in from this location.`,
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: () => deleteMut.mutate(loc.id),
-        },
-      ],
-    );
-  }
 
   return (
     <View style={[s.root, { paddingTop: insets.top }]}>
-      <PageHeader
-        title="Office Locations"
-        variant="bytecode"
-        rightActions={[
-          {
-            icon: "plus",
-            onPress: () => router.push("/(app)/admin/locations/form"),
-          },
-        ]}
-      />
-
-      {locations.length === 0 && !isLoading && (
-        <View style={s.emptyBanner}>
-          <Feather name="alert-circle" size={14} color={colors.amber[600]} />
-          <Text style={s.emptyBannerText}>
-            No active locations — employees cannot check in until at least one
-            is configured.
-          </Text>
-        </View>
-      )}
+      <PageHeader title="Office Location" variant="bytecode" />
 
       {isLoading ? (
         <View style={s.center}>
           <Spinner />
         </View>
       ) : (
-        <FlatList
-          data={locations}
-          keyExtractor={(i) => String(i.id)}
-          contentContainerStyle={s.list}
+        <ScrollView
+          contentContainerStyle={s.content}
           showsVerticalScrollIndicator={false}
           refreshControl={
             <RefreshControl
@@ -153,26 +49,88 @@ export default function AdminLocationsScreen() {
               tintColor={colors.bytecode[600]}
             />
           }
-          ListEmptyComponent={
-            <View style={s.empty}>
-              <Feather name="map-pin" size={36} color={colors.gray[300]} />
-              <Text style={s.emptyText}>No locations added</Text>
+        >
+          {!location ? (
+            <View style={s.emptyCard}>
+              <View style={s.emptyIcon}>
+                <Feather name="map-pin" size={28} color={colors.gray[300]} />
+              </View>
+              <Text style={s.emptyTitle}>No location configured</Text>
+              <Text style={s.emptyBody}>
+                Set up the office location so employees can check in.
+              </Text>
+              <TouchableOpacity
+                style={s.setupBtn}
+                onPress={() => router.push("/(app)/admin/locations/form")}
+              >
+                <Feather name="plus" size={15} color="#fff" />
+                <Text style={s.setupBtnText}>Set up location</Text>
+              </TouchableOpacity>
             </View>
-          }
-          ItemSeparatorComponent={() => <View style={{ height: 10 }} />}
-          renderItem={({ item }) => (
-            <LocationRow
-              loc={item}
-              onEdit={() =>
-                router.push({
-                  pathname: "/(app)/admin/locations/form",
-                  params: { id: item.id },
-                })
-              }
-              onDelete={() => confirmDelete(item)}
-            />
+          ) : (
+            <View style={s.card}>
+              <View style={s.cardHeader}>
+                <View style={s.iconWrap}>
+                  <Feather
+                    name="map-pin"
+                    size={20}
+                    color={colors.bytecode[600]}
+                  />
+                </View>
+                <View style={s.cardMeta}>
+                  <Text style={s.cardName}>{location.name}</Text>
+                  <Text style={s.cardCoords}>
+                    {Number(location.latitude).toFixed(6)},{" "}
+                    {Number(location.longitude).toFixed(6)}
+                  </Text>
+                </View>
+                <TouchableOpacity
+                  style={s.editBtn}
+                  onPress={() => router.push("/(app)/admin/locations/form")}
+                  hitSlop={8}
+                >
+                  <Feather
+                    name="edit-2"
+                    size={15}
+                    color={colors.bytecode[600]}
+                  />
+                </TouchableOpacity>
+              </View>
+
+              <View style={s.divider} />
+
+              {[
+                {
+                  icon: "disc" as const,
+                  label: "Check-in radius",
+                  value: `${location.radiusMeters} meters`,
+                },
+                {
+                  icon: "navigation" as const,
+                  label: "Latitude",
+                  value: String(Number(location.latitude).toFixed(6)),
+                },
+                {
+                  icon: "navigation-2" as const,
+                  label: "Longitude",
+                  value: String(Number(location.longitude).toFixed(6)),
+                },
+              ].map(({ icon, label, value }) => (
+                <View key={label} style={s.detailRow}>
+                  <View style={s.detailIcon}>
+                    <Feather
+                      name={icon}
+                      size={14}
+                      color={colors.bytecode[500]}
+                    />
+                  </View>
+                  <Text style={s.detailLabel}>{label}</Text>
+                  <Text style={s.detailValue}>{value}</Text>
+                </View>
+              ))}
+            </View>
           )}
-        />
+        </ScrollView>
       )}
     </View>
   );
@@ -181,63 +139,105 @@ export default function AdminLocationsScreen() {
 const s = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.gray[50] },
   center: { flex: 1, alignItems: "center", justifyContent: "center" },
-  emptyBanner: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 8,
-    margin: 16,
-    backgroundColor: colors.amber[50],
-    borderRadius: 12,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: colors.amber[200],
-  },
-  emptyBannerText: {
-    flex: 1,
-    fontSize: 12,
-    color: colors.amber[800],
-    fontWeight: "600",
-    lineHeight: 18,
-  },
-  list: { padding: 16, paddingBottom: 40 },
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
+  content: { padding: 16 },
+
+  emptyCard: {
     backgroundColor: "#fff",
-    borderRadius: 16,
-    padding: 14,
-    gap: 12,
+    borderRadius: 20,
     borderWidth: 1,
     borderColor: colors.gray[100],
-  },
-  rowIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 13,
+    padding: 32,
     alignItems: "center",
-    justifyContent: "center",
+    gap: 10,
   },
-  rowInfo: { flex: 1, gap: 3 },
-  rowName: { fontSize: 15, fontWeight: "800", color: colors.gray[900] },
-  rowCoords: { fontSize: 11, color: colors.gray[400], fontFamily: "monospace" },
-  rowMeta: { flexDirection: "row", alignItems: "center", gap: 5 },
-  rowRadius: { fontSize: 12, color: colors.gray[400] },
-  inactiveBadge: {
-    backgroundColor: colors.red[50],
-    paddingHorizontal: 6,
-    paddingVertical: 1,
-    borderRadius: 6,
-  },
-  inactiveText: { fontSize: 10, fontWeight: "700", color: colors.red[500] },
-  rowActions: { flexDirection: "row", gap: 4 },
-  actionBtn: {
-    width: 34,
-    height: 34,
-    borderRadius: 10,
+  emptyIcon: {
+    width: 60,
+    height: 60,
+    borderRadius: 18,
     backgroundColor: colors.gray[50],
     alignItems: "center",
     justifyContent: "center",
+    marginBottom: 4,
   },
-  empty: { alignItems: "center", paddingTop: 60, gap: 10 },
-  emptyText: { fontSize: 14, color: colors.gray[400] },
+  emptyTitle: { fontSize: 16, fontWeight: "800", color: colors.gray[800] },
+  emptyBody: {
+    fontSize: 13,
+    color: colors.gray[400],
+    textAlign: "center",
+    lineHeight: 19,
+  },
+  setupBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginTop: 8,
+    backgroundColor: colors.bytecode[600],
+    borderRadius: 12,
+    paddingHorizontal: 20,
+    paddingVertical: 11,
+  },
+  setupBtnText: { fontSize: 14, fontWeight: "700", color: "#fff" },
+
+  card: {
+    backgroundColor: "#fff",
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: colors.gray[100],
+    overflow: "hidden",
+  },
+  cardHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    padding: 16,
+  },
+  iconWrap: {
+    width: 46,
+    height: 46,
+    borderRadius: 14,
+    backgroundColor: colors.bytecode[50],
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  cardMeta: { flex: 1 },
+  cardName: { fontSize: 16, fontWeight: "800", color: colors.gray[900] },
+  cardCoords: {
+    fontSize: 11,
+    color: colors.gray[400],
+    marginTop: 2,
+    fontFamily: "monospace",
+  },
+  editBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: colors.bytecode[50],
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  divider: { height: 1, backgroundColor: colors.gray[100] },
+  detailRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 13,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.gray[50],
+  },
+  detailIcon: {
+    width: 28,
+    height: 28,
+    borderRadius: 8,
+    backgroundColor: colors.bytecode[50],
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  detailLabel: {
+    flex: 1,
+    fontSize: 13,
+    color: colors.gray[500],
+    fontWeight: "600",
+  },
+  detailValue: { fontSize: 13, fontWeight: "700", color: colors.gray[800] },
 });

@@ -10,7 +10,6 @@ import type {
     Employee,
     EmployeeFilter,
     TrustedDevice,
-    OfficeLocation,
 } from '@/types/attendance';
 
 
@@ -65,6 +64,14 @@ export async function adminGetMonthlySummary(month: string, employeeId?: number)
     const res = await api.get<ApiResponse<MonthlySummary | MonthlySummary[]>>(
         `/admin/attendance/summary/monthly`,
         { params: { month, employeeId } }
+    );
+    return res.data.data!;
+}
+
+export async function adminGetWeeklyTimesheet(employeeId: number, date?: string): Promise<import('@/types/attendance').WeeklyTimesheet> {
+    const res = await api.get<import('@/types/api').ApiResponse<import('@/types/attendance').WeeklyTimesheet>>(
+        `/admin/attendance/timesheet/weekly/${employeeId}`,
+        { params: date ? { date } : undefined },
     );
     return res.data.data!;
 }
@@ -132,40 +139,4 @@ export async function adminRevokeDevice(deviceId: number): Promise<void> {
 
 export async function adminUnrevokeDevice(deviceId: number): Promise<void> {
     await api.patch(`/employees/devices/${deviceId}/unrevoke`);
-}
-
-// ── Admin: Office Locations ────────────────────────────────────────────────────
-
-export async function adminListLocations(): Promise<OfficeLocation[]> {
-    const res = await api.get<ApiResponse<OfficeLocation[]>>('/admin/attendance/office-locations');
-    return res.data.data!;
-}
-
-export async function adminGetLocation(id: number): Promise<OfficeLocation> {
-    const res = await api.get<ApiResponse<OfficeLocation>>(`/admin/attendance/office-locations/${id}`);
-    return res.data.data!;
-}
-
-export async function adminCreateLocation(payload: {
-    name: string;
-    latitude: number;
-    longitude: number;
-    radiusMeters: number;
-}): Promise<OfficeLocation> {
-    const res = await api.post<ApiResponse<OfficeLocation>>('/admin/attendance/office-locations', payload);
-    return res.data.data!;
-}
-
-export async function adminUpdateLocation(id: number, payload: Partial<{
-    name: string;
-    latitude: number;
-    longitude: number;
-    radiusMeters: number;
-}>): Promise<OfficeLocation> {
-    const res = await api.patch<ApiResponse<OfficeLocation>>(`/admin/attendance/office-locations/${id}`, payload);
-    return res.data.data!;
-}
-
-export async function adminDeleteLocation(id: number): Promise<void> {
-    await api.delete(`/admin/attendance/office-locations/${id}`);
 }
