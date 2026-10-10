@@ -1,6 +1,6 @@
 // app/(app)/admin/employees/[id]/index.tsx
 
-import React from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -25,6 +25,8 @@ import { colors } from "@/components/ui/theme";
 import { Spinner } from "@/components/ui/Spinner";
 import { PageHeader } from "@/components/ui/PageHeader";
 import type { TrustedDevice } from "@/types/attendance";
+import { resetUserOtp } from "@/lib/api/users.api";
+import { OtpRevealModal } from "@/components/ui/OtpRevealModal";
 
 function DeviceRow({
   device,
@@ -115,6 +117,24 @@ export default function AdminEmployeeDetailScreen() {
         getApiErrorMessage(err, "Failed to restore device"),
       ),
   });
+  const [otpModal, setOtpModal] = useState<{
+    visible: boolean;
+    password: string;
+    name: string;
+  }>({ visible: false, password: "", name: "" });
+
+  const resetOtpMut = useMutation({
+    mutationFn: () => resetUserOtp(emp!.user.id),
+    onSuccess: (res) => {
+      setOtpModal({
+        visible: true,
+        password: res.temporaryPassword,
+        name: `${emp!.user.firstName} ${emp!.user.lastName}`.trim(),
+      });
+    },
+    onError: (err) =>
+      Alert.alert("Error", getApiErrorMessage(err, "Failed to reset OTP")),
+  });
 
   function confirmRevoke(device: TrustedDevice) {
     Alert.alert(
@@ -143,141 +163,200 @@ export default function AdminEmployeeDetailScreen() {
     `${emp.user.firstName?.[0] ?? ""}${emp.user.lastName?.[0] ?? ""}` || "?";
 
   return (
-    <View style={[s.root, { paddingTop: insets.top }]}>
-      <PageHeader
-        title="Employee Detail"
-        variant="bytecode"
-        rightActions={[
-          {
-            icon: "edit-2",
-            onPress: () =>
-              router.push({
-                pathname: "/(app)/admin/employees/form",
-                params: { id: emp.id },
-              }),
-          },
-        ]}
-      />
-      <ScrollView
-        contentContainerStyle={[
-          s.content,
-          { paddingBottom: insets.bottom + 32 },
-        ]}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Profile */}
-        <View style={s.profileCard}>
-          <View style={s.avatar}>
-            <Text style={s.avatarText}>{initials}</Text>
-          </View>
-          <Text style={s.profileName}>
-            {emp.user.firstName} {emp.user.lastName}
-          </Text>
-          <Text style={s.profileEmail}>{emp.user.email}</Text>
-          {emp.user.phone && (
-            <Text style={s.profilePhone}>{emp.user.phone}</Text>
-          )}
-          <TouchableOpacity
-            style={[
-              s.statusToggle,
-              {
-                backgroundColor: emp.isActive
-                  ? colors.green[50]
-                  : colors.red[50],
-              },
-            ]}
-            onPress={() => toggleMut.mutate()}
-          >
-            <View
+    <>
+      <View style={[s.root, { paddingTop: insets.top }]}>
+        <PageHeader
+          title="Employee Detail"
+          variant="bytecode"
+          rightActions={[
+            {
+              icon: "key",
+              onPress: () =>
+                emp &&
+                Alert.alert(
+                  "Reset OTP",
+                  `Reset login password for ${emp.user.firstName} ${emp.user.lastName}?`,
+                  [
+                    { text: "Cancel", style: "cancel" },
+                    {
+                      text: "Reset",
+                      style: "destructive",
+                      onPress: () => resetOtpMut.mutate(),
+                    },
+                  ],
+                ),
+            },
+            {
+              icon: "edit-2",
+              onPress: () =>
+                router.push({
+                  pathname: "/(app)/admin/employees/form",
+                  params: { id: emp.id },
+                }),
+            },
+          ]}
+        />
+        <ScrollView
+          contentContainerStyle={[
+            s.content,
+            { paddingBottom: insets.bottom + 32 },
+          ]}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Profile */}
+          <View style={s.profileCard}>
+            <View style={s.avatar}>
+              <Text style={s.avatarText}>{initials}</Text>
+            </View>
+            <Text style={s.profileName}>
+              {emp.user.firstName} {emp.user.lastName}
+            </Text>
+            <Text style={s.profileEmail}>{emp.user.email}</Text>
+            {emp.user.phone && (
+              <Text style={s.profilePhone}>{emp.user.phone}</Text>
+            )}
+            <TouchableOpacity
               style={[
-                s.statusDot,
+                s.statusToggle,
                 {
                   backgroundColor: emp.isActive
-                    ? colors.green[500]
-                    : colors.red[400],
+                    ? colors.green[50]
+                    : colors.red[50],
                 },
               ]}
-            />
-            <Text
-              style={[
-                s.statusToggleText,
-                { color: emp.isActive ? colors.green[700] : colors.red[600] },
-              ]}
+              onPress={() => toggleMut.mutate()}
             >
-              {emp.isActive
-                ? "Active — tap to deactivate"
-                : "Inactive — tap to activate"}
-            </Text>
-          </TouchableOpacity>
-        </View>
+              <View
+                style={[
+                  s.statusDot,
+                  {
+                    backgroundColor: emp.isActive
+                      ? colors.green[500]
+                      : colors.red[400],
+                  },
+                ]}
+              />
+              <Text
+                style={[
+                  s.statusToggleText,
+                  { color: emp.isActive ? colors.green[700] : colors.red[600] },
+                ]}
+              >
+                {emp.isActive
+                  ? "Active — tap to deactivate"
+                  : "Inactive — tap to activate"}
+              </Text>
+            </TouchableOpacity>
+          </View>
 
-        {/* Details */}
-        <View style={s.infoCard}>
-          {[
-            ["Employee Code", emp.employeeCode],
-            ["Department", emp.department?.name ?? "—"],
-            ["Designation", emp.designation ?? "—"],
-            [
-              "Joining Date",
-              new Date(emp.joiningDate).toLocaleDateString("en-BD", {
-                day: "numeric",
-                month: "long",
-                year: "numeric",
-              }),
-            ],
-          ].map(([label, value]) => (
-            <View key={label} style={s.infoRow}>
-              <Text style={s.infoLabel}>{label}</Text>
-              <Text style={s.infoValue}>{value}</Text>
+          {/* Details */}
+          <View style={s.infoCard}>
+            {[
+              ["Employee Code", emp.employeeCode],
+              ["Department", emp.department?.name ?? "—"],
+              ["Designation", emp.designation ?? "—"],
+              [
+                "Joining Date",
+                new Date(emp.joiningDate).toLocaleDateString("en-BD", {
+                  day: "numeric",
+                  month: "long",
+                  year: "numeric",
+                }),
+              ],
+            ].map(([label, value]) => (
+              <View key={label} style={s.infoRow}>
+                <Text style={s.infoLabel}>{label}</Text>
+                <Text style={s.infoValue}>{value}</Text>
+              </View>
+            ))}
+            <View style={s.infoRow}>
+              <Text style={s.infoLabel}>Weekend Days</Text>
+              <View style={s.weekendPills}>
+                {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map(
+                  (day, i) => {
+                    const on = (emp.weekendDays ?? [5, 6]).includes(i);
+                    return (
+                      <View
+                        key={i}
+                        style={[s.weekendPill, on && s.weekendPillOn]}
+                      >
+                        <Text
+                          style={[
+                            s.weekendPillText,
+                            on && s.weekendPillTextOn,
+                          ]}
+                        >
+                          {day}
+                        </Text>
+                      </View>
+                    );
+                  },
+                )}
+              </View>
             </View>
-          ))}
-        </View>
+          </View>
 
-        {/* Quick actions */}
-        <View style={s.actionsCard}>
-          <TouchableOpacity
-            style={s.actionItem}
-            onPress={() =>
-              router.push({
-                pathname: "/(app)/attendance/timesheet",
-                params: {
-                  employeeId: emp.id,
-                  employeeName: `${emp.user.firstName ?? ""} ${emp.user.lastName ?? ""}`.trim(),
-                },
-              })
-            }
-          >
-            <View style={s.actionIcon}>
-              <Feather name="calendar" size={17} color={colors.bytecode[600]} />
-            </View>
-            <Text style={s.actionLabel}>View Attendance</Text>
-            <Feather name="chevron-right" size={16} color={colors.gray[400]} />
-          </TouchableOpacity>
-        </View>
-
-        {/* Devices */}
-        <Text style={s.sectionTitle}>Trusted Devices ({devices.length})</Text>
-        <View style={s.devicesCard}>
-          {devices.length === 0 ? (
-            <View style={s.emptyDevices}>
-              <Feather name="smartphone" size={24} color={colors.gray[300]} />
-              <Text style={s.emptyDevicesText}>No devices registered</Text>
-            </View>
-          ) : (
-            devices.map((device, i) => (
-              <React.Fragment key={device.id}>
-                <DeviceRow
-                  device={device}
-                  onRevoke={() => confirmRevoke(device)}
-                  onUnrevoke={() => unrevokeMut.mutate(device.id)}
+          {/* Quick actions */}
+          <View style={s.actionsCard}>
+            <TouchableOpacity
+              style={s.actionItem}
+              onPress={() =>
+                router.push({
+                  pathname: "/(app)/attendance/timesheet",
+                  params: {
+                    employeeId: emp.id,
+                    employeeName:
+                      `${emp.user.firstName ?? ""} ${emp.user.lastName ?? ""}`.trim(),
+                  },
+                })
+              }
+            >
+              <View style={s.actionIcon}>
+                <Feather
+                  name="calendar"
+                  size={17}
+                  color={colors.bytecode[600]}
                 />
-                {i < devices.length - 1 && <View style={s.sep} />}
-              </React.Fragment>
-            ))
-          )}
-        </View>
-      </ScrollView>
-    </View>
+              </View>
+              <Text style={s.actionLabel}>View Attendance</Text>
+              <Feather
+                name="chevron-right"
+                size={16}
+                color={colors.gray[400]}
+              />
+            </TouchableOpacity>
+          </View>
+
+          {/* Devices */}
+          <Text style={s.sectionTitle}>Trusted Devices ({devices.length})</Text>
+          <View style={s.devicesCard}>
+            {devices.length === 0 ? (
+              <View style={s.emptyDevices}>
+                <Feather name="smartphone" size={24} color={colors.gray[300]} />
+                <Text style={s.emptyDevicesText}>No devices registered</Text>
+              </View>
+            ) : (
+              devices.map((device, i) => (
+                <React.Fragment key={device.id}>
+                  <DeviceRow
+                    device={device}
+                    onRevoke={() => confirmRevoke(device)}
+                    onUnrevoke={() => unrevokeMut.mutate(device.id)}
+                  />
+                  {i < devices.length - 1 && <View style={s.sep} />}
+                </React.Fragment>
+              ))
+            )}
+          </View>
+        </ScrollView>
+      </View>
+      <OtpRevealModal
+        visible={otpModal.visible}
+        password={otpModal.password}
+        userName={otpModal.name}
+        onClose={() => setOtpModal((prev) => ({ ...prev, visible: false }))}
+      />
+    </>
   );
 }
 
@@ -408,4 +487,15 @@ const s = StyleSheet.create({
   emptyDevices: { alignItems: "center", padding: 24, gap: 8 },
   emptyDevicesText: { fontSize: 13, color: colors.gray[400] },
   sep: { height: 1, backgroundColor: colors.gray[100] },
+
+  weekendPills: { flexDirection: "row", gap: 4 },
+  weekendPill: {
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    borderRadius: 6,
+    backgroundColor: colors.gray[100],
+  },
+  weekendPillOn: { backgroundColor: colors.bytecode[600] },
+  weekendPillText: { fontSize: 10, fontWeight: "700", color: colors.gray[400] },
+  weekendPillTextOn: { color: "#fff" },
 });

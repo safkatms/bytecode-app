@@ -98,7 +98,6 @@ function defaultTime(existingIso: string | null, fallbackHour: number): Date {
   d.setHours(fallbackHour, 0, 0, 0);
   return d;
 }
-
 // ─── DayRow ─────────────────────────────────────────────────────────────────
 
 function DayRow({
@@ -114,19 +113,20 @@ function DayRow({
     ? (STATUS_COLOR[day.status] ?? colors.gray[400])
     : colors.gray[300];
   const label = day.status ? (STATUS_LABEL[day.status] ?? day.status) : "—";
-  const isOff = day.isWeekend || day.status === "holiday";
+  const isHoliday = day.status === "holiday";
+  const isOff = day.isWeekend || isHoliday;
 
   const d = new Date(day.date);
   const dateLabel = d.toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
   });
-  const shortDay = day.dayName
-    ? day.dayName.slice(0, 3)
+  const shortDay = day.day
+    ? day.day.slice(0, 3)
     : d.toLocaleDateString("en-US", { weekday: "short" });
 
   const canEdit =
-    !isOff && (adminView || !(day.checkInTime && day.checkOutTime));
+    !isHoliday && (adminView || !(day.checkInTime && day.checkOutTime));
 
   return (
     <TouchableOpacity
@@ -134,6 +134,8 @@ function DayRow({
       onPress={canEdit ? onPress : undefined}
       activeOpacity={canEdit ? 0.7 : 1}
     >
+      <View style={[s.statusStrip, { backgroundColor: color }]} />
+
       <View style={s.dayCol}>
         <Text style={[s.dayName, isOff && s.dayNameOff]}>{shortDay}</Text>
         <Text style={[s.dayDate, isOff && s.dayDateOff]}>{dateLabel}</Text>
@@ -144,24 +146,28 @@ function DayRow({
       </View>
 
       <View style={s.timesCol}>
-        <Text style={s.timeValue}>{fmtTime(day.checkInTime)}</Text>
-        <Text style={s.timeSep}>→</Text>
-        <Text style={s.timeValue}>{fmtTime(day.checkOutTime)}</Text>
+        <Text style={[s.timeValue, isOff && s.timeValueOff]}>
+          {fmtTime(day.checkInTime)}
+        </Text>
+        <Text style={s.timeSep}>-</Text>
+        <Text style={[s.timeValue, isOff && s.timeValueOff]}>
+          {fmtTime(day.checkOutTime)}
+        </Text>
       </View>
 
       <Text style={[s.hoursText, isOff && s.hoursTextOff]}>
         {day.workHours != null ? fmtHours(Number(day.workHours)) : "—"}
       </Text>
 
-      {day.isManual ? (
-        <View style={s.manualDot}>
-          <Text style={s.manualDotText}>M</Text>
-        </View>
-      ) : canEdit ? (
-        <Feather name="edit-2" size={12} color={colors.bytecode[400]} />
-      ) : (
-        <View style={{ width: 12 }} />
-      )}
+      <View style={s.editCol}>
+        {day.isManual ? (
+          <View style={s.manualDot}>
+            <Text style={s.manualDotText}>M</Text>
+          </View>
+        ) : canEdit ? (
+          <Feather name="edit-2" size={13} color={colors.bytecode[400]} />
+        ) : null}
+      </View>
     </TouchableOpacity>
   );
 }
@@ -571,15 +577,20 @@ export default function TimesheetScreen() {
           <AlertUI message={getApiErrorMessage(error)} type="error" />
         ) : data ? (
           <>
-            <View style={s.colHeader}>
-              <Text style={[s.colLabel, { width: 58 }]}>Day</Text>
-              <Text style={[s.colLabel, { width: 64 }]}>Status</Text>
-              <Text style={[s.colLabel, { flex: 1 }]}>In → Out</Text>
-              <Text style={[s.colLabel, { width: 42, textAlign: "right" }]}>
-                Hrs
-              </Text>
-            </View>
-
+            {data.weekendDays?.length > 0 && (
+              <View style={s.weekendStrip}>
+                <Feather name="moon" size={11} color={colors.gray[400]} />
+                <Text style={s.weekendStripLabel}>Weekends:</Text>
+                {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map(
+                  (d, i) =>
+                    data.weekendDays.includes(i) ? (
+                      <View key={i} style={s.weekendStripPill}>
+                        <Text style={s.weekendStripPillText}>{d}</Text>
+                      </View>
+                    ) : null,
+                )}
+              </View>
+            )}
             <View style={s.card}>
               {data.days.map((day, i) => (
                 <React.Fragment key={day.date}>
@@ -768,20 +779,6 @@ const s = StyleSheet.create({
   },
   calBtnText: { fontSize: 11, fontWeight: "700", color: colors.bytecode[700] },
 
-  // col header
-  colHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 14,
-    gap: 8,
-  },
-  colLabel: {
-    fontSize: 10,
-    fontWeight: "700",
-    color: colors.gray[400],
-    letterSpacing: 0.5,
-  },
-
   // day card
   card: {
     backgroundColor: "#fff",
@@ -795,37 +792,42 @@ const s = StyleSheet.create({
   dayRow: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 14,
-    paddingVertical: 13,
-    gap: 8,
+    paddingVertical: 12,
+    paddingRight: 14,
+    gap: 10,
+    overflow: "hidden",
   },
   dayRowOff: { backgroundColor: colors.gray[50] },
-  dayCol: { width: 50 },
-  dayName: { fontSize: 12, fontWeight: "800", color: colors.gray[800] },
+  statusStrip: {
+    width: 3,
+    alignSelf: "stretch",
+    borderRadius: 2,
+    marginLeft: 4,
+  },
+  dayCol: { width: 46 },
+  dayName: { fontSize: 13, fontWeight: "800", color: colors.gray[800] },
   dayDate: { fontSize: 10, color: colors.gray[400], marginTop: 1 },
   dayNameOff: { color: colors.gray[400] },
   dayDateOff: { color: colors.gray[300] },
 
   statusPill: {
-    width: 56,
+    width: 58,
     borderRadius: 8,
-    paddingVertical: 3,
+    paddingVertical: 4,
     alignItems: "center",
   },
   statusText: { fontSize: 10, fontWeight: "700" },
 
-  timesCol: { flex: 1, flexDirection: "row", alignItems: "center", gap: 4 },
-  timeValue: { fontSize: 11, color: colors.gray[600], fontWeight: "600" },
-  timeSep: { fontSize: 10, color: colors.gray[300] },
-
-  hoursText: {
-    width: 34,
-    textAlign: "right",
-    fontSize: 12,
-    fontWeight: "800",
-    color: colors.gray[800],
+  timesCol: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 4,
   },
-  hoursTextOff: { color: colors.gray[300] },
+  timeValue: { fontSize: 11, color: colors.gray[600], fontWeight: "600" },
+  timeValueOff: { color: colors.gray[300] },
+  timeSep: { fontSize: 10, color: colors.gray[300] },
 
   manualDot: {
     width: 16,
@@ -1012,4 +1014,33 @@ const s = StyleSheet.create({
     borderBottomColor: colors.gray[100],
   },
   iosSheetTitle: { fontSize: 16, fontWeight: "800", color: colors.gray[900] },
+  hoursText: {
+    width: 44,
+    fontSize: 12,
+    fontWeight: "800",
+    color: colors.gray[800],
+    textAlign: "right",
+  },
+  hoursTextOff: { color: colors.gray[300] },
+
+  editCol: {
+    width: 22,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  weekendStrip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 4,
+  },
+  weekendStripLabel: { fontSize: 11, color: colors.gray[400], fontWeight: "600" },
+  weekendStripPill: {
+    backgroundColor: colors.bytecode[600],
+    borderRadius: 6,
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+  },
+  weekendStripPillText: { fontSize: 10, fontWeight: "700", color: "#fff" },
 });

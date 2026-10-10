@@ -1,7 +1,7 @@
 import { api, setTokens, clearTokens } from '@/lib/axios';
 import { useAuthStore } from '@/store/auth.store';
 import type { ApiResponse, TokenResponse } from '@/types/api';
-import type { User } from '@/types/finance';
+import type { User } from '@/types/attendance';
 import { queryClient } from '../query-client';
 export async function login(
     email: string,

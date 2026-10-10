@@ -42,9 +42,70 @@ const schema = z
 
 type FormData = z.infer<typeof schema>;
 
+function PasswordField({
+  label,
+  icon,
+  placeholder,
+  show,
+  onToggle,
+  error,
+  control,
+  name,
+}: {
+  label: string;
+  icon: string;
+  placeholder: string;
+  show: boolean;
+  onToggle: () => void;
+  error?: string;
+  control: any;
+  name: string;
+}) {
+  return (
+    <View style={s.field}>
+      <Text style={s.label}>{label}</Text>
+      <Controller
+        control={control}
+        name={name}
+        render={({ field: { onChange, value } }) => (
+          <View style={[s.inputRow, !!error && s.inputRowError]}>
+            <View style={s.inputPrefix}>
+              <Feather
+                name={icon as any}
+                size={14}
+                color={colors.bytecode[500]}
+              />
+            </View>
+            <TextInput
+              style={s.textInput}
+              value={value}
+              onChangeText={onChange}
+              placeholder={placeholder}
+              placeholderTextColor={colors.gray[400]}
+              secureTextEntry={!show}
+              autoCapitalize="none"
+            />
+            <TouchableOpacity
+              style={s.inputSuffix}
+              onPress={onToggle}
+              hitSlop={8}
+            >
+              <Feather
+                name={show ? "eye-off" : "eye"}
+                size={14}
+                color={colors.gray[400]}
+              />
+            </TouchableOpacity>
+          </View>
+        )}
+      />
+      {error && <Text style={s.fieldError}>{error}</Text>}
+    </View>
+  );
+}
+
 export default function ChangePasswordScreen() {
   const insets = useSafeAreaInsets();
-  const router = useRouter();
   const [showCurrent, setShowCurrent] = useState(false);
   const [showNew, setShowNew] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
@@ -71,174 +132,58 @@ export default function ChangePasswordScreen() {
 
   return (
     <KeyboardAvoidingView
-      style={[styles.root, { paddingTop: insets.top }]}
+      style={[s.root, { paddingTop: insets.top }]}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
       <PageHeader title="Change Password" variant="bytecode" />
-
       <ScrollView
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[
+          s.content,
+          { paddingBottom: insets.bottom + 32 },
+        ]}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
         {success && (
           <AlertUI message="Password changed successfully" type="success" />
         )}
-
         {apiError && <AlertUI message={apiError} type="error" />}
 
-        <View style={styles.card}>
-          {/* Current Password */}
-          <View style={styles.field}>
-            <Text style={styles.label}>Current password</Text>
-            <Controller
-              control={control}
-              name="currentPassword"
-              render={({ field: { onChange, value } }) => (
-                <View
-                  style={[
-                    styles.inputWrap,
-                    errors.currentPassword && styles.inputError,
-                  ]}
-                >
-                  <Feather
-                    name="lock"
-                    size={16}
-                    color={colors.gray[400]}
-                    style={styles.inputIcon}
-                  />
-                  <TextInput
-                    style={styles.input}
-                    value={value}
-                    onChangeText={onChange}
-                    placeholder="Enter current password"
-                    placeholderTextColor={colors.gray[400]}
-                    secureTextEntry={!showCurrent}
-                    autoCapitalize="none"
-                  />
-                  <TouchableOpacity
-                    onPress={() => setShowCurrent((p) => !p)}
-                    hitSlop={8}
-                  >
-                    <Feather
-                      name={showCurrent ? "eye-off" : "eye"}
-                      size={16}
-                      color={colors.gray[400]}
-                    />
-                  </TouchableOpacity>
-                </View>
-              )}
-            />
-            {errors.currentPassword && (
-              <Text style={styles.fieldError}>
-                {errors.currentPassword.message}
-              </Text>
-            )}
-          </View>
-
-          <View style={styles.divider} />
-
-          {/* New Password */}
-          <View style={styles.field}>
-            <Text style={styles.label}>New password</Text>
-            <Controller
-              control={control}
-              name="newPassword"
-              render={({ field: { onChange, value } }) => (
-                <View
-                  style={[
-                    styles.inputWrap,
-                    errors.newPassword && styles.inputError,
-                  ]}
-                >
-                  <Feather
-                    name="key"
-                    size={16}
-                    color={colors.gray[400]}
-                    style={styles.inputIcon}
-                  />
-                  <TextInput
-                    style={styles.input}
-                    value={value}
-                    onChangeText={onChange}
-                    placeholder="Enter new password"
-                    placeholderTextColor={colors.gray[400]}
-                    secureTextEntry={!showNew}
-                    autoCapitalize="none"
-                  />
-                  <TouchableOpacity
-                    onPress={() => setShowNew((p) => !p)}
-                    hitSlop={8}
-                  >
-                    <Feather
-                      name={showNew ? "eye-off" : "eye"}
-                      size={16}
-                      color={colors.gray[400]}
-                    />
-                  </TouchableOpacity>
-                </View>
-              )}
-            />
-            {errors.newPassword && (
-              <Text style={styles.fieldError}>
-                {errors.newPassword.message}
-              </Text>
-            )}
-          </View>
-
-          <View style={styles.divider} />
-
-          {/* Confirm Password */}
-          <View style={styles.field}>
-            <Text style={styles.label}>Confirm new password</Text>
-            <Controller
-              control={control}
-              name="confirmPassword"
-              render={({ field: { onChange, value } }) => (
-                <View
-                  style={[
-                    styles.inputWrap,
-                    errors.confirmPassword && styles.inputError,
-                  ]}
-                >
-                  <Feather
-                    name="check"
-                    size={16}
-                    color={colors.gray[400]}
-                    style={styles.inputIcon}
-                  />
-                  <TextInput
-                    style={styles.input}
-                    value={value}
-                    onChangeText={onChange}
-                    placeholder="Repeat new password"
-                    placeholderTextColor={colors.gray[400]}
-                    secureTextEntry={!showConfirm}
-                    autoCapitalize="none"
-                  />
-                  <TouchableOpacity
-                    onPress={() => setShowConfirm((p) => !p)}
-                    hitSlop={8}
-                  >
-                    <Feather
-                      name={showConfirm ? "eye-off" : "eye"}
-                      size={16}
-                      color={colors.gray[400]}
-                    />
-                  </TouchableOpacity>
-                </View>
-              )}
-            />
-            {errors.confirmPassword && (
-              <Text style={styles.fieldError}>
-                {errors.confirmPassword.message}
-              </Text>
-            )}
-          </View>
+        <View style={s.group}>
+          <PasswordField
+            label="CURRENT PASSWORD"
+            icon="lock"
+            placeholder="Enter current password"
+            show={showCurrent}
+            onToggle={() => setShowCurrent((p) => !p)}
+            error={errors.currentPassword?.message}
+            control={control}
+            name="currentPassword"
+          />
+          <PasswordField
+            label="NEW PASSWORD"
+            icon="key"
+            placeholder="Enter new password"
+            show={showNew}
+            onToggle={() => setShowNew((p) => !p)}
+            error={errors.newPassword?.message}
+            control={control}
+            name="newPassword"
+          />
+          <PasswordField
+            label="CONFIRM NEW PASSWORD"
+            icon="check"
+            placeholder="Repeat new password"
+            show={showConfirm}
+            onToggle={() => setShowConfirm((p) => !p)}
+            error={errors.confirmPassword?.message}
+            control={control}
+            name="confirmPassword"
+          />
         </View>
 
-        <View style={styles.hintCard}>
-          <Text style={styles.hintTitle}>Password requirements</Text>
+        <View style={s.hintCard}>
+          <Text style={s.hintTitle}>Password requirements</Text>
           {[
             "At least 8 characters",
             "One uppercase letter",
@@ -246,15 +191,15 @@ export default function ChangePasswordScreen() {
             "One number",
             "One special character (@$!%*?&^#)",
           ].map((hint) => (
-            <View key={hint} style={styles.hintRow}>
-              <View style={styles.hintDot} />
-              <Text style={styles.hintText}>{hint}</Text>
+            <View key={hint} style={s.hintRow}>
+              <View style={s.hintDot} />
+              <Text style={s.hintText}>{hint}</Text>
             </View>
           ))}
         </View>
 
         <TouchableOpacity
-          style={[styles.submitButton, isSubmitting && styles.submitDisabled]}
+          style={[s.submitButton, isSubmitting && s.submitDisabled]}
           onPress={handleSubmit(onSubmit)}
           disabled={isSubmitting}
           activeOpacity={0.85}
@@ -264,7 +209,7 @@ export default function ChangePasswordScreen() {
           ) : (
             <>
               <Feather name="shield" size={16} color="#fff" />
-              <Text style={styles.submitLabel}>Update password</Text>
+              <Text style={s.submitLabel}>Update password</Text>
             </>
           )}
         </TouchableOpacity>
@@ -273,77 +218,52 @@ export default function ChangePasswordScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const s = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.gray[50] },
-  content: { padding: 16, gap: 14 },
-  successBanner: {
+  content: { padding: 16, gap: 20 },
+
+  group: { gap: 14 },
+
+  field: { gap: 6 },
+  label: {
+    fontSize: 10,
+    fontWeight: "800",
+    color: colors.gray[400],
+    letterSpacing: 1,
+  },
+  inputRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 10,
-    backgroundColor: colors.bytecode[50],
-    borderRadius: 12,
-    padding: 13,
-    borderWidth: 1,
+    backgroundColor: "#fff",
+    borderWidth: 1.5,
     borderColor: colors.bytecode[100],
-  },
-  successIcon: {
-    width: 28,
-    height: 28,
-    borderRadius: 8,
-    backgroundColor: "#fff",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  successText: { fontSize: 13, fontWeight: "700", color: colors.bytecode[700] },
-  errorBanner: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    backgroundColor: colors.red[50],
-    borderRadius: 12,
-    padding: 13,
-    borderWidth: 1,
-    borderColor: colors.red[100],
-  },
-  errorIcon: {
-    width: 28,
-    height: 28,
-    borderRadius: 8,
-    backgroundColor: "#fff",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  errorText: { fontSize: 13, fontWeight: "700", color: colors.red[600] },
-  card: {
-    backgroundColor: "#fff",
-    borderRadius: 17,
-    borderWidth: 1,
-    borderColor: colors.gray[100],
+    borderRadius: 14,
     overflow: "hidden",
   },
-  field: { padding: 14, gap: 8 },
-  divider: { height: 1, backgroundColor: colors.gray[100] },
-  label: { fontSize: 12, fontWeight: "700", color: colors.gray[600] },
-  inputWrap: {
-    flexDirection: "row",
+  inputRowError: { borderColor: colors.red[400] },
+  inputPrefix: {
+    width: 44,
+    height: 50,
     alignItems: "center",
-    backgroundColor: colors.gray[50],
-    borderRadius: 11,
-    borderWidth: 1,
-    borderColor: colors.gray[200],
-    paddingHorizontal: 12,
-    paddingVertical: 11,
-    gap: 10,
+    justifyContent: "center",
+    borderRightWidth: 1,
+    borderRightColor: colors.bytecode[50],
   },
-  inputError: { borderColor: colors.red[400] },
-  inputIcon: { width: 16 },
-  input: {
+  inputSuffix: {
+    width: 44,
+    height: 50,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  textInput: {
     flex: 1,
-    fontSize: 14,
+    height: 50,
+    paddingHorizontal: 12,
+    fontSize: 15,
     color: colors.gray[900],
-    paddingVertical: 0,
   },
-  fieldError: { fontSize: 11, color: colors.red[500], fontWeight: "600" },
+  fieldError: { fontSize: 12, color: colors.red[500] },
+
   hintCard: {
     backgroundColor: "#fff",
     borderRadius: 14,
@@ -361,6 +281,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.bytecode[400],
   },
   hintText: { fontSize: 12, color: colors.gray[500], fontWeight: "500" },
+
   submitButton: {
     flexDirection: "row",
     alignItems: "center",

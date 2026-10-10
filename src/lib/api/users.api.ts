@@ -1,6 +1,6 @@
 import { api } from '@/lib/axios';
 import type { ApiResponse } from '@/types/api';
-import type { User, PaginatedData, PaginationMeta } from '@/types/finance';
+import type { User, PaginatedData, PaginationMeta } from '@/types/attendance';
 
 export type UserItem = {
     id: number;

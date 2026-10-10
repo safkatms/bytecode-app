@@ -156,6 +156,13 @@ export default function SettingsScreen() {
       chevron: true,
     },
     {
+      icon: "share-2",
+      label: "Teams",
+      sublabel: "Create and manage teams",
+      onPress: () => router.push("/(app)/admin/teams"),
+      chevron: true,
+    },
+    {
       icon: "map-pin",
       label: "Location",
       sublabel: "Set up office location",

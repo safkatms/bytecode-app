@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { User } from '@/types/finance';
+import type { User } from '@/types/attendance';
 
 interface AuthState {
   isAuthenticated: boolean;

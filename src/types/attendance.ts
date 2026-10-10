@@ -3,9 +3,40 @@
 export type AttendanceStatus =
     | 'present' | 'absent' | 'late' | 'half_day'
     | 'on_leave' | 'holiday' | 'weekend';
-
+export type Role = 'admin' | 'user';
 export type RecordStatus = 'active' | 'deleted';
+export interface PaginationMeta {
+    totalItems: number;
+    itemCount: number;
+    itemsPerPage: number;
+    totalPages: number;
+    currentPage: number;
+}
 
+export interface PaginatedData<T> {
+    data: T[];
+    meta: PaginationMeta;
+    summary?: {
+        income: number;
+        expense: number;
+        savings: number;
+    };
+}
+export interface User {
+    id: number;
+    email: string;
+    firstName: string | null;
+    lastName: string | null;
+    phone: string | null;
+    role: Role;
+    isActive: boolean;
+    mustChangePassword: boolean;
+    timezone: string;
+    locale: string;
+    currency: string;
+    dateFormat: string;
+    createdAt: string;
+}
 export interface AttendanceRecord {
     id: number;
     employeeId: number;
@@ -63,6 +94,7 @@ export interface Employee {
     joiningDate: string;
     isActive: boolean;
     createdAt: string;
+    weekendDays: number[] | null;
     user: {
         id: number;
         firstName: string | null;
@@ -125,6 +157,34 @@ export interface EmployeeFilter {
     departmentId?: number;
 }
 
+export interface TeamMember {
+    id: number;
+    employeeCode: string;
+    user: {
+        id: number;
+        firstName: string | null;
+        lastName: string | null;
+        email: string;
+    };
+}
+
+export interface Team {
+    id: number;
+    name: string;
+    description: string | null;
+    isActive: boolean;
+    leaderId: number;
+    leader: TeamMember;
+    members: TeamMember[];
+    createdAt: string;
+}
+
+export interface TeamFilter {
+    page?: number;
+    limit?: number;
+    search?: string;
+}
+
 export interface TodayStatus {
     date: string;
     status: AttendanceStatus | null;
@@ -140,7 +200,7 @@ export interface TodayStatus {
 export interface WeeklyTimesheetDay {
     id?: number;
     date: string;
-    dayName: string;
+    day: string;
     status: AttendanceStatus | null;
     checkInTime: string | null;
     checkOutTime: string | null;
@@ -153,6 +213,7 @@ export interface WeeklyTimesheetDay {
 export interface WeeklyTimesheet {
     weekStart: string;
     weekEnd: string;
+    weekendDays: number[];
     days: WeeklyTimesheetDay[];
     totalWorkHours: number;
     presentDays: number;
