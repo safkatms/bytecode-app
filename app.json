@@ -5,10 +5,7 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "scheme": "bytecode-expo",
-    "platforms": [
-      "ios",
-      "android"
-    ],
+    "platforms": ["ios", "android"],
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.bytecode-expo.app",
@@ -17,15 +14,15 @@
       }
     },
     "android": {
-      "icon": "./assets/finance.png",
+      "icon": "./assets/bytecode.png",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/finance.png",
+        "foregroundImage": "./assets/bytecode.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.finance.app"
+      "package": "com.bytecode.app"
     },
     "splash": {
-      "image": "./assets/finance.png",
+      "image": "./assets/bytecode.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
@@ -37,7 +34,7 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/finance.png",
+          "image": "./assets/bytecode.png",
           "resizeMode": "contain",
           "backgroundColor": "#ffffff"
         }

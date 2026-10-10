@@ -33,7 +33,7 @@ export default function Index() {
     return (
       <View style={s.container}>
         <Animated.Image
-          source={require("../assets/finance.png")}
+          source={require("../assets/bytecode.png")}
           style={[s.logo, { opacity }]}
           resizeMode="contain"
         />
