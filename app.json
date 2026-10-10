@@ -5,7 +5,10 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "scheme": "bytecode-expo",
-    "platforms": ["ios", "android"],
+    "platforms": [
+      "ios",
+      "android"
+    ],
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.bytecode-expo.app",
@@ -43,8 +46,9 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "c4a7ea94-fb77-4aa4-8d7d-0eec34b81720"
+        "projectId": "9a7a901e-bd2f-48d4-bd04-17e61bd19887"
       }
-    }
+    },
+    "owner": "safkatms"
   }
 }
