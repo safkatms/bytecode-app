@@ -131,7 +131,7 @@ export default function SettingsScreen() {
       setUser(originalAdmin);
       clearImpersonation();
       await qc.invalidateQueries();
-      router.back();
+      router.replace("/(app)/admin/dashboard");
     } catch {
       await logout();
       setAuthenticated(false);
@@ -142,38 +142,10 @@ export default function SettingsScreen() {
 
   const adminItems: SettingItem[] = [
     {
-      icon: "users",
-      label: "Employees",
-      sublabel: "Create and manage employees",
-      onPress: () => router.push("/(app)/admin/employees"),
-      chevron: true,
-    },
-    {
-      icon: "briefcase",
-      label: "Departments",
-      sublabel: "Create and manage departments",
-      onPress: () => router.push("/(app)/admin/departments"),
-      chevron: true,
-    },
-    {
-      icon: "share-2",
-      label: "Teams",
-      sublabel: "Create and manage teams",
-      onPress: () => router.push("/(app)/admin/teams"),
-      chevron: true,
-    },
-    {
-      icon: "map-pin",
-      label: "Location",
-      sublabel: "Set up office location",
-      onPress: () => router.push("/(app)/admin/locations"),
-      chevron: true,
-    },
-    {
-      icon: "repeat",
-      label: "Switch user",
-      sublabel: "View the app as another user",
-      onPress: () => router.push("/(app)/switch-user"),
+      icon: "grid",
+      label: "Admin Menu",
+      sublabel: "Employees, departments, sick leave & more",
+      onPress: () => router.push("/(app)/admin/menu"),
       chevron: true,
     },
   ];

@@ -20,6 +20,7 @@ import {
   getAdminRecentActivity,
   getAdminLateReport,
 } from "@/lib/api/dashboard-admin.api";
+import { getEmployeeOverview } from "@/lib/api/dashboard-employee.api";
 import { useAuthStore } from "@/store/auth.store";
 import { Spinner } from "@/components/ui/Spinner";
 import { AlertUI } from "@/components/ui/Alert";
@@ -205,6 +206,12 @@ export default function AdminDashboardScreen() {
     queryKey: ["admin-dashboard-overview"],
     queryFn: getAdminOverview,
   });
+  const { data: myDay, refetch: refetchMyDay } = useQuery({
+    queryKey: ["admin-my-today"],
+    queryFn: getEmployeeOverview,
+    retry: false, // admin may not have an employee profile — that's fine
+  });
+
   const { data: trend, refetch: refetchTrend } = useQuery({
     queryKey: ["admin-dashboard-trend"],
     queryFn: () => getAdminAttendanceTrend(6),
@@ -267,6 +274,7 @@ export default function AdminDashboardScreen() {
     refetchDept();
     refetchActivity();
     refetchLate();
+    refetchMyDay();
   };
 
   if (isLoading)
@@ -426,68 +434,131 @@ export default function AdminDashboardScreen() {
           )}
         </View>
       </View>
-
-      {/* EMPLOYEE COUNTS */}
-      <View style={styles.section}>
-        <SectionHeader
-          title="Employees"
-          onPress={() => router.push("/(app)/employees")}
-        />
-        <View style={styles.empRow}>
-          {[
-            {
-              label: "Total",
-              value: employees.total,
-              color: colors.bytecode[600],
-              bg: colors.bytecode[50],
-            },
-            {
-              label: "Active",
-              value: employees.active,
-              color: colors.bytecode[600],
-              bg: colors.bytecode[50],
-            },
-            {
-              label: "Inactive",
-              value: employees.inactive,
-              color: colors.red[500],
-              bg: colors.red[50],
-            },
-          ].map((e) => (
-            <View
-              key={e.label}
-              style={[styles.empCard, { borderColor: `${e.color}20` }]}
-            >
-              <Text style={[styles.empValue, { color: e.color }]}>
-                {e.value}
-              </Text>
-              <Text style={styles.empLabel}>{e.label}</Text>
-            </View>
-          ))}
+      {/* THIS MONTH STATS */}
+      {myDay && (
+        <View style={styles.section}>
+          <SectionHeader title="This month" />
+          <View style={styles.statsGrid}>
+            {[
+              {
+                label: "Present",
+                value: myDay.thisMonth.present,
+                color: colors.bytecode[500],
+                icon: "check-circle" as const,
+              },
+              {
+                label: "Late",
+                value: myDay.thisMonth.late,
+                color: "#EAB308",
+                icon: "clock" as const,
+              },
+              {
+                label: "Absent",
+                value: myDay.thisMonth.absent,
+                color: colors.red[500],
+                icon: "x-circle" as const,
+              },
+              {
+                label: "On Leave",
+                value: myDay.thisMonth.onLeave,
+                color: colors.gray[400],
+                icon: "umbrella" as const,
+              },
+            ].map(({ label, value, color, icon }) => (
+              <View
+                key={label}
+                style={[styles.statCard, { borderColor: `${color}25` }]}
+              >
+                <View
+                  style={[styles.statIcon, { backgroundColor: `${color}15` }]}
+                >
+                  <Feather name={icon} size={15} color={color} />
+                </View>
+                <Text style={[styles.statValue, { color }]}>{value}</Text>
+                <Text style={styles.statLabel}>{label}</Text>
+              </View>
+            ))}
+          </View>
         </View>
-      </View>
+      )}
+      {/* PERSONAL CHECK-IN / OUT */}
+      {myDay &&
+        !myDay.today.checkedIn &&
+        myDay.today.status !== "sick_leave" &&
+        myDay.today.status !== "holiday" && (
+          <View style={styles.section}>
+            <TouchableOpacity
+              style={styles.checkInBtn}
+              onPress={() => router.push("/(app)/attendance/check-in")}
+              activeOpacity={0.85}
+            >
+              <Feather name="map-pin" size={18} color="#fff" />
+              <Text style={styles.checkInBtnLabel}>Check in now</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+      {myDay && myDay.today.checkedIn && !myDay.today.checkedOut && (
+        <View style={styles.section}>
+          <TouchableOpacity
+            style={[styles.checkInBtn, { backgroundColor: colors.red[500] }]}
+            onPress={() => router.push("/(app)/attendance/check-out")}
+            activeOpacity={0.85}
+          >
+            <Feather name="log-out" size={18} color="#fff" />
+            <Text style={styles.checkInBtnLabel}>Check out</Text>
+          </TouchableOpacity>
+        </View>
+      )}
 
-      {/* QUICK ACTIONS */}
+      {/* PERSONAL QUICK ACTIONS */}
       <View style={styles.section}>
         <SectionHeader title="Quick actions" />
         <View style={styles.quickActionsCard}>
           {[
             {
-              icon: "user-plus" as const,
-              label: "Add Employee",
-              path: "/(app)/admin/employees/form",
+              icon: "file-plus" as const,
+              label: "Apply Leave",
+              path: "/(app)/sick-leave/apply",
             },
             {
-              icon: "edit-2" as const,
-              label: "Mark Attend.",
-              path: "/(app)/admin/attendance/mark",
+              icon: "clock" as const,
+              label: "Timesheet",
+              path: "/(app)/attendance/timesheet",
             },
-            {
-              icon: "briefcase" as const,
-              label: "Departments",
-              path: "/(app)/admin/departments",
-            },
+          ].map(({ icon, label, path }) => (
+            <TouchableOpacity
+              key={label}
+              style={styles.quickAction}
+              onPress={() => router.push(path as any)}
+              activeOpacity={0.75}
+            >
+              <View style={styles.quickIcon}>
+                <Feather name={icon} size={19} color={colors.bytecode[600]} />
+              </View>
+              <Text style={styles.quickLabel}>{label}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </View>
 
+      {/* ADMIN MENU */}
+      <View style={styles.section}>
+        <SectionHeader
+          title="Admin Menu"
+          onPress={() => router.push("/(app)/admin/menu")}
+        />
+        <View style={styles.quickActionsCard}>
+          {[
+            {
+              icon: "calendar" as const,
+              label: "Attendance",
+              path: "/(app)/admin/attendance",
+            },
+            {
+              icon: "thermometer" as const,
+              label: "Sick Leave",
+              path: "/(app)/admin/sick-leave",
+            },
             {
               icon: "bar-chart-2" as const,
               label: "Reports",
@@ -523,44 +594,6 @@ export default function AdminDashboardScreen() {
           </View>
         </View>
       )}
-
-      {/* LATE REPORT */}
-      {lateData && lateData.length > 0 && (
-        <View style={styles.section}>
-          <SectionHeader title="Late this month" />
-          <View style={styles.card}>
-            {lateData.slice(0, 5).map((item, index) => (
-              <React.Fragment key={item.employee.id}>
-                <LateRow item={item} />
-                {index < Math.min(lateData.length, 5) - 1 && (
-                  <View style={styles.divider} />
-                )}
-              </React.Fragment>
-            ))}
-            {lateData.length > 5 && (
-              <>
-                <View style={styles.divider} />
-                <TouchableOpacity
-                  style={styles.viewMoreRow}
-                  onPress={() =>
-                    router.push("/(app)/attendance/reports" as any)
-                  }
-                >
-                  <Text style={styles.viewMoreText}>
-                    View {lateData.length - 5} more
-                  </Text>
-                  <Feather
-                    name="arrow-right"
-                    size={15}
-                    color={colors.bytecode[500]}
-                  />
-                </TouchableOpacity>
-              </>
-            )}
-          </View>
-        </View>
-      )}
-
       {/* RECENT ACTIVITY */}
       {activity && activity.length > 0 && (
         <View style={styles.section}>
@@ -947,4 +980,90 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   retryLabel: { color: "#FFFFFF", fontWeight: "800" },
+  checkInBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
+    borderRadius: 16,
+    height: 56,
+    backgroundColor: colors.bytecode[600],
+  },
+  checkInBtnLabel: { fontSize: 15, fontWeight: "800", color: "#fff" },
+  statsGrid: { flexDirection: "row", gap: 10 },
+  statCard: {
+    flex: 1,
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    borderWidth: 1.5,
+    padding: 13,
+    alignItems: "center",
+    gap: 5,
+  },
+  statIcon: {
+    width: 34,
+    height: 34,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  statValue: { fontSize: 22, fontWeight: "900" },
+  statLabel: {
+    fontSize: 10,
+    fontWeight: "600",
+    color: colors.gray[400],
+    textAlign: "center",
+  },
+
+  myTodayCard: {
+    backgroundColor: colors.bytecode[700],
+    borderRadius: 18,
+    padding: 16,
+    gap: 12,
+  },
+  myTodayBadge: {
+    alignSelf: "flex-start",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 7,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+  },
+  myTodayDot: { width: 8, height: 8, borderRadius: 4 },
+  myTodayBadgeText: { fontSize: 12, fontWeight: "800" },
+  checkTimesRow: {
+    flexDirection: "row",
+    borderRadius: 14,
+    overflow: "hidden",
+    backgroundColor: "rgba(0,0,0,0.18)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.08)",
+  },
+  checkTimeItem: {
+    flex: 1,
+    paddingVertical: 11,
+    paddingHorizontal: 5,
+    alignItems: "center",
+  },
+  checkTimeIcon: {
+    width: 24,
+    height: 24,
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 4,
+  },
+  checkTimeLabel: {
+    fontSize: 10,
+    color: "rgba(204,251,241,0.6)",
+    fontWeight: "600",
+  },
+  checkTimeValue: {
+    fontSize: 13,
+    fontWeight: "800",
+    color: "#FFFFFF",
+    marginTop: 3,
+  },
+  checkTimeDivider: { width: 1, backgroundColor: "rgba(255,255,255,0.10)" },
 });

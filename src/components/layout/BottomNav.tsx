@@ -13,13 +13,7 @@ export function BottomNav() {
   const nav = [
     { href: "/(app)/dashboard", label: "Dashboard", icon: "home" },
     { href: "/(app)/attendance", label: "Attendance", icon: "clock" },
-    isAdmin
-      ? {
-          href: "/(app)/admin/attendance",
-          label: "Admin Attendance",
-          icon: "calendar",
-        }
-      : null,
+    { href: "/(app)/sick-leave", label: "Sick Leave", icon: "thermometer" },
   ].filter(Boolean) as { href: string; label: string; icon: string }[];
 
   const pathname = usePathname();

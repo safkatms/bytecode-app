@@ -37,6 +37,7 @@ const STATUS_COLOR: Record<AttendanceStatus, string> = {
   half_day: colors.bytecode[300],
   on_leave: colors.gray[400],
   holiday: "#818CF8",
+  sick_leave: colors.red[400],
   weekend: colors.gray[300],
 };
 
@@ -47,6 +48,7 @@ const STATUS_LABEL: Record<AttendanceStatus, string> = {
   half_day: "Half Day",
   on_leave: "On Leave",
   holiday: "Holiday",
+  sick_leave: "Sick Leave",
   weekend: "Weekend",
 };
 
@@ -256,9 +258,7 @@ export default function AdminAttendanceDetailScreen() {
                 ["Check-out", fmtTime(record.checkOutTime)],
                 [
                   "Work Hours",
-                  record.workHours
-                    ? fmtHours(Number(record.workHours))
-                    : "—",
+                  record.workHours ? fmtHours(Number(record.workHours)) : "—",
                 ],
                 ["Late Minutes", String(record.lateMinutes ?? 0)],
                 ["Type", record.isManual ? "Manual (Admin)" : "Self Check-in"],

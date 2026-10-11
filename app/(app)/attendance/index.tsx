@@ -24,6 +24,7 @@ const STATUS_COLOR: Record<string, string> = {
   on_leave: colors.gray[400],
   half_day: colors.bytecode[300],
   holiday: "#818CF8",
+  sick_leave: colors.red[400],
   weekend: colors.gray[300],
 };
 
@@ -34,6 +35,7 @@ const STATUS_LABEL: Record<string, string> = {
   on_leave: "On Leave",
   half_day: "Half Day",
   holiday: "Holiday",
+  sick_leave: "Sick Leave",
   weekend: "Weekend",
 };
 
@@ -82,7 +84,11 @@ export default function AttendanceIndexScreen() {
     ? (STATUS_LABEL[today.status] ?? today.status)
     : "No record";
 
-  const canCheckIn = !isLoading && !today?.checkedIn;
+  const canCheckIn =
+    !isLoading &&
+    !today?.checkedIn &&
+    !today?.status?.includes("sick_leave") &&
+    !today?.status?.includes("holiday");
   const canCheckOut = !isLoading && today?.checkedIn && !today?.checkedOut;
 
   return (

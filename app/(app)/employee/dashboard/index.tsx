@@ -367,7 +367,9 @@ export default function EmployeeDashboardScreen() {
       </View>
 
       {/* CHECK IN / OUT CTA */}
-      {!today.checkedIn && (
+      {!today.checkedIn &&
+        today.status !== "sick_leave" &&
+        today.status !== "holiday" && (
         <View style={styles.section}>
           <TouchableOpacity
             style={styles.checkInBtn}
@@ -391,6 +393,37 @@ export default function EmployeeDashboardScreen() {
           </TouchableOpacity>
         </View>
       )}
+
+      {/* QUICK ACTIONS */}
+      <View style={styles.section}>
+        <SectionHeader title="Quick actions" />
+        <View style={styles.quickActionsCard}>
+          {[
+            {
+              icon: "file-plus" as const,
+              label: "Add Sick Leave",
+              path: "/(app)/sick-leave/apply",
+            },
+            {
+              icon: "clock" as const,
+              label: "Timesheet",
+              path: "/(app)/attendance/timesheet",
+            },
+          ].map(({ icon, label, path }) => (
+            <TouchableOpacity
+              key={label}
+              style={styles.quickAction}
+              onPress={() => router.push(path as any)}
+              activeOpacity={0.75}
+            >
+              <View style={styles.quickIcon}>
+                <Feather name={icon} size={19} color={colors.bytecode[600]} />
+              </View>
+              <Text style={styles.quickLabel}>{label}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </View>
 
       {/* DEVICES */}
       {data.devices.length > 0 && (
@@ -734,4 +767,28 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   retryLabel: { color: "#FFFFFF", fontWeight: "800" },
+  quickActionsCard: {
+    flexDirection: "row",
+    backgroundColor: "#FFFFFF",
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: colors.gray[100],
+    paddingVertical: 13,
+    paddingHorizontal: 7,
+  },
+  quickAction: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+  },
+  quickIcon: {
+    width: 43,
+    height: 43,
+    borderRadius: 14,
+    backgroundColor: colors.bytecode[50],
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  quickLabel: { fontSize: 11, fontWeight: "700", color: colors.gray[700] },
 });

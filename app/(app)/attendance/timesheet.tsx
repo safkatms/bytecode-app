@@ -41,6 +41,7 @@ const STATUS_COLOR: Record<string, string> = {
   on_leave: colors.gray[400],
   half_day: colors.bytecode[300],
   holiday: "#818CF8",
+  sick_leave: colors.red[400],
   weekend: colors.gray[300],
 };
 
@@ -51,6 +52,7 @@ const STATUS_LABEL: Record<string, string> = {
   on_leave: "Leave",
   half_day: "Half",
   holiday: "Holiday",
+  sick_leave: "Sick Leave",
   weekend: "Weekend",
 };
 
@@ -113,7 +115,10 @@ function DayRow({
     ? (STATUS_COLOR[day.status] ?? colors.gray[400])
     : colors.gray[300];
   const label = day.status ? (STATUS_LABEL[day.status] ?? day.status) : "—";
-  const isHoliday = day.status === "holiday";
+  const isHoliday =
+    day.status === "holiday" ||
+    day.status === "sick_leave" ||
+    day.status === "on_leave";
   const isOff = day.isWeekend || isHoliday;
 
   const d = new Date(day.date);
@@ -1035,7 +1040,11 @@ const s = StyleSheet.create({
     gap: 6,
     paddingHorizontal: 4,
   },
-  weekendStripLabel: { fontSize: 11, color: colors.gray[400], fontWeight: "600" },
+  weekendStripLabel: {
+    fontSize: 11,
+    color: colors.gray[400],
+    fontWeight: "600",
+  },
   weekendStripPill: {
     backgroundColor: colors.bytecode[600],
     borderRadius: 6,

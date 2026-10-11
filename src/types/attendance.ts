@@ -2,7 +2,7 @@
 
 export type AttendanceStatus =
     | 'present' | 'absent' | 'late' | 'half_day'
-    | 'on_leave' | 'holiday' | 'weekend';
+    | 'on_leave' | 'holiday' | 'weekend' | 'sick_leave';
 export type Role = 'admin' | 'user';
 export type RecordStatus = 'active' | 'deleted';
 export interface PaginationMeta {

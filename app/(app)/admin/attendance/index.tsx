@@ -39,6 +39,7 @@ const STATUS_COLOR: Record<AttendanceStatus, string> = {
   half_day: colors.amber[500],
   on_leave: colors.bytecode[500],
   holiday: colors.bytecode[700],
+  sick_leave: colors.red[400],
   weekend: colors.gray[400],
 };
 const STATUS_LABEL: Record<AttendanceStatus, string> = {
@@ -48,6 +49,7 @@ const STATUS_LABEL: Record<AttendanceStatus, string> = {
   half_day: "Half Day",
   on_leave: "On Leave",
   holiday: "Holiday",
+  sick_leave: "Sick Leave",
   weekend: "Weekend",
 };
 const ALL_STATUSES = Object.keys(STATUS_LABEL) as AttendanceStatus[];
@@ -536,8 +538,18 @@ const s = StyleSheet.create({
   },
   navBtnOff: { backgroundColor: colors.gray[50] },
   dateLabelWrap: { flex: 1, alignItems: "center", gap: 6 },
-  dateLabel: { fontSize: 15, fontWeight: "800", color: colors.gray[900], textAlign: "center" },
-  todayLink: { fontSize: 11, color: colors.bytecode[500], fontWeight: "600", textAlign: "center" },
+  dateLabel: {
+    fontSize: 15,
+    fontWeight: "800",
+    color: colors.gray[900],
+    textAlign: "center",
+  },
+  todayLink: {
+    fontSize: 11,
+    color: colors.bytecode[500],
+    fontWeight: "600",
+    textAlign: "center",
+  },
 
   summaryBar: {
     flexDirection: "row",
