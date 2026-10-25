@@ -4,6 +4,7 @@ export { DashboardHero } from "./DashboardHero";
 export { FloatingCard } from "./FloatingCard";
 export type { FloatingMetric } from "./FloatingCard";
 export { CheckInCta } from "./CheckInCta";
+export { GradientCta } from "./GradientCta";
 export { Section, Card, CardDivider } from "./Section";
 export { StatsGrid, STAT_PALETTE } from "./StatsGrid";
 export type { StatItem } from "./StatsGrid";

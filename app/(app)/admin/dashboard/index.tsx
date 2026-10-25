@@ -18,6 +18,7 @@ import {
 import { getEmployeeOverview } from "@/lib/api/dashboard-employee.api";
 import { useAuthStore } from "@/store/auth.store";
 import { Spinner } from "@/components/ui/Spinner";
+import { UpdateBanner } from "@/components/ui/UpdateBanner";
 import { AlertUI } from "@/components/ui/Alert";
 import { getApiErrorMessage } from "@/lib/api-error";
 import { colors } from "@/components/ui/theme";
@@ -242,6 +243,8 @@ export default function AdminDashboardScreen() {
           },
         ]}
       />
+
+      <UpdateBanner />
 
       {canCheckIn && (
         <CheckInCta

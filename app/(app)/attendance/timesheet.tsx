@@ -34,6 +34,11 @@ import {
   ATTENDANCE_STATUS_COLOR as STATUS_COLOR,
   ATTENDANCE_STATUS_LABEL as STATUS_LABEL,
 } from "@/lib/attendance-status";
+import {
+  toLocalIsoDate,
+  parseLocalIsoDate,
+  addDaysIso,
+} from "@/lib/date";
 import { useOfficeGeofence } from "@/components/attendance/useOfficeGeofence";
 import {
   TimePickerSheet,
@@ -57,12 +62,6 @@ function fmtHours(h: number) {
   if (hrs === 0) return `${mins}m`;
   if (mins === 0) return `${hrs}h`;
   return `${hrs}h ${mins}m`;
-}
-
-function addDays(isoDate: string, days: number) {
-  const d = new Date(isoDate);
-  d.setDate(d.getDate() + days);
-  return d.toISOString().slice(0, 10);
 }
 
 /** Build ISO string: combine a YYYY-MM-DD date with a time from a Date object */
@@ -100,14 +99,14 @@ function DayRow({
     day.status === "casual_leave";
   const isOff = day.isWeekend || isLeave;
 
-  const d = new Date(day.date);
+  const d = parseLocalIsoDate(day.date);
   const dayNum = d.getDate();
   const month = d.toLocaleDateString("en-US", { month: "short" });
   const weekday = day.day
     ? day.day.slice(0, 3)
     : d.toLocaleDateString("en-US", { weekday: "short" });
 
-  const todayIso = new Date().toISOString().slice(0, 10);
+  const todayIso = toLocalIsoDate();
   const isToday = day.date === todayIso;
   const isFuture = day.date > todayIso;
   const isPastWithCheckInOnly =
@@ -249,7 +248,7 @@ function EntrySheet({
   const pickerValue =
     activePicker === "in" ? inTime : activePicker === "out" ? outTime : new Date();
 
-  const dateDisplay = new Date(day.date).toLocaleDateString("en-US", {
+  const dateDisplay = parseLocalIsoDate(day.date).toLocaleDateString("en-US", {
     weekday: "long",
     month: "short",
     day: "numeric",
@@ -503,28 +502,28 @@ export default function TimesheetScreen() {
         : getWeeklyTimesheet(refDate),
   });
 
-  const today = new Date().toISOString().slice(0, 10);
+  const today = toLocalIsoDate();
   const isCurrentWeek = !data || data.weekEnd >= today;
 
   function prevWeek() {
-    setRefDate(addDays(data?.weekStart ?? today, -7));
+    setRefDate(addDaysIso(data?.weekStart ?? today, -7));
   }
 
   function nextWeek() {
     if (isCurrentWeek) return;
-    const next = addDays(data!.weekStart, 7);
+    const next = addDaysIso(data!.weekStart, 7);
     setRefDate(next > today ? undefined : next);
   }
 
   function handleWeekDatePicked(selected: Date) {
-    const picked = selected.toISOString().slice(0, 10);
+    const picked = toLocalIsoDate(selected);
     setRefDate(picked >= today ? undefined : picked);
   }
 
   const weekLabel = data
     ? (() => {
-        const ws = new Date(data.weekStart);
-        const we = new Date(data.weekEnd);
+        const ws = parseLocalIsoDate(data.weekStart);
+        const we = parseLocalIsoDate(data.weekEnd);
         const same = ws.getMonth() === we.getMonth();
         return `${ws.toLocaleDateString("en-US", { month: "short", day: "numeric" })} – ${we.toLocaleDateString("en-US", { month: same ? undefined : "short", day: "numeric" })}`;
       })()
@@ -718,7 +717,7 @@ export default function TimesheetScreen() {
 
       <TimePickerSheet
         visible={showWeekPicker}
-        value={refDate ? new Date(refDate) : new Date()}
+        value={refDate ? parseLocalIsoDate(refDate) : new Date()}
         title="Jump to week"
         mode="date"
         maximumDate={new Date()}

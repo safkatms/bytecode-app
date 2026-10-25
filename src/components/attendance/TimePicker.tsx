@@ -19,13 +19,14 @@ export function fmtTimeDisplay(d: Date) {
   });
 }
 
-/** Labelled row that opens a time picker. */
+/** Labelled row that opens a picker. Shows a time unless `format` says otherwise. */
 export function TimeField({
   icon = "clock",
   label,
   value,
   tint = colors.bytecode[600],
   tintBg = colors.bytecode[50],
+  format = fmtTimeDisplay,
   onPress,
 }: {
   icon?: React.ComponentProps<typeof Feather>["name"];
@@ -33,6 +34,7 @@ export function TimeField({
   value: Date;
   tint?: string;
   tintBg?: string;
+  format?: (d: Date) => string;
   onPress: () => void;
 }) {
   return (
@@ -47,7 +49,7 @@ export function TimeField({
         activeOpacity={0.8}
       >
         <Text style={[s.fieldBtnText, { color: tint }]}>
-          {fmtTimeDisplay(value)}
+          {format(value)}
         </Text>
         <Feather name="chevron-down" size={14} color={tint} />
       </TouchableOpacity>
@@ -64,6 +66,7 @@ export function TimePickerSheet({
   value,
   title,
   mode = "time",
+  minimumDate,
   maximumDate,
   onChange,
   onClose,
@@ -72,6 +75,7 @@ export function TimePickerSheet({
   value: Date;
   title: string;
   mode?: "time" | "date";
+  minimumDate?: Date;
   maximumDate?: Date;
   onChange: (d: Date) => void;
   onClose: () => void;
@@ -87,6 +91,7 @@ export function TimePickerSheet({
         value={value}
         mode={mode}
         display="default"
+        minimumDate={minimumDate}
         maximumDate={maximumDate}
         onChange={handle}
       />
@@ -112,6 +117,7 @@ export function TimePickerSheet({
             value={value}
             mode={mode}
             display="spinner"
+            minimumDate={minimumDate}
             maximumDate={maximumDate}
             onChange={handle}
             themeVariant="light"

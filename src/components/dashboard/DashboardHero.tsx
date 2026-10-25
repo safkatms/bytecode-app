@@ -2,6 +2,7 @@ import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import Feather from "@expo/vector-icons/Feather";
 import { colors } from "@/components/ui/theme";
+import { EnterShape } from "@/components/ui/EnterShape";
 import type { PresenceStatus } from "./usePresence";
 
 export function DashboardHero({
@@ -29,9 +30,20 @@ export function DashboardHero({
   return (
     <View style={[s.hero, { paddingTop }]}>
       <View style={s.gradientBase} />
-      <View style={s.gradientMid} />
-      <View style={s.gradientBlobTop} />
-      <View style={s.gradientBlobBottom} />
+      <EnterShape style={s.gradientMid} fromX={110} />
+      <EnterShape
+        style={s.gradientBlobTop}
+        delay={120}
+        fromY={-70}
+        fromScale={0.88}
+      />
+      <EnterShape
+        style={s.gradientBlobBottom}
+        delay={240}
+        fromX={-70}
+        fromY={50}
+        fromScale={0.88}
+      />
 
       <View style={s.header}>
         <View style={{ flex: 1 }}>

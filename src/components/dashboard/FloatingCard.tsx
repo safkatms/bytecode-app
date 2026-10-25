@@ -5,13 +5,16 @@ import { colors } from "@/components/ui/theme";
 
 export type FloatingMetric = {
   key: string;
-  icon: React.ComponentProps<typeof Feather>["name"];
-  iconBg: string;
-  iconColor: string;
+  /** omit all three for a plain value/label column */
+  icon?: React.ComponentProps<typeof Feather>["name"];
+  iconBg?: string;
+  iconColor?: string;
   label: string;
   value: string;
   sub?: string;
   emphasize?: boolean;
+  /** overrides the default value colour, e.g. green/red for a balance */
+  valueColor?: string;
 };
 
 /**
@@ -22,9 +25,8 @@ export function FloatingCard({
   title,
   pillIcon = "calendar",
   pillText,
-  pillColor = colors.bytecode[700],
-  pillBg = colors.bytecode[50],
   float = true,
+  valueFirst = false,
   metrics,
 }: {
   title: string;
@@ -33,6 +35,8 @@ export function FloatingCard({
   pillColor?: string;
   pillBg?: string;
   float?: boolean;
+  /** put the value on top and the label underneath */
+  valueFirst?: boolean;
   metrics: FloatingMetric[];
 }) {
   return (
@@ -40,11 +44,9 @@ export function FloatingCard({
       <View style={s.header}>
         <Text style={s.title}>{title}</Text>
         {pillText && (
-          <View style={[s.pill, { backgroundColor: pillBg }]}>
-            {pillIcon && (
-              <Feather name={pillIcon} size={13} color={pillColor} />
-            )}
-            <Text style={[s.pillText, { color: pillColor }]}>{pillText}</Text>
+          <View style={[s.pill]}>
+            {pillIcon && <Feather name={pillIcon} size={13} />}
+            <Text style={[s.pillText]}>{pillText}</Text>
           </View>
         )}
       </View>
@@ -53,11 +55,23 @@ export function FloatingCard({
         {metrics.map((m, i) => (
           <React.Fragment key={m.key}>
             <View style={s.item}>
-              <View style={[s.icon, { backgroundColor: m.iconBg }]}>
-                <Feather name={m.icon} size={18} color={m.iconColor} />
-              </View>
-              <Text style={s.label}>{m.label}</Text>
-              <Text style={m.emphasize ? s.valueBig : s.value}>{m.value}</Text>
+              {m.icon && (
+                <View style={[s.icon, { backgroundColor: m.iconBg }]}>
+                  <Feather name={m.icon} size={18} color={m.iconColor} />
+                </View>
+              )}
+              {!valueFirst && <Text style={s.label}>{m.label}</Text>}
+              <Text
+                style={[
+                  m.emphasize ? s.valueBig : s.value,
+                  m.valueColor ? { color: m.valueColor } : null,
+                ]}
+              >
+                {m.value}
+              </Text>
+              {valueFirst && (
+                <Text style={[s.label, s.labelBelow]}>{m.label}</Text>
+              )}
               {m.sub && <Text style={s.sub}>{m.sub}</Text>}
             </View>
             {i < metrics.length - 1 && <View style={s.divider} />}
@@ -101,12 +115,15 @@ const s = StyleSheet.create({
   pill: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
+    gap: 7,
+    backgroundColor: "#fff",
     borderRadius: 20,
-    paddingHorizontal: 12,
-    paddingVertical: 7,
+    borderWidth: 1,
+    borderColor: colors.gray[200],
+    paddingHorizontal: 13,
+    paddingVertical: 8,
   },
-  pillText: { fontSize: 12, fontWeight: "700" },
+  pillText: { fontSize: 13, fontWeight: "700", color: colors.gray[700] },
   body: { flexDirection: "row", alignItems: "flex-start" },
   item: { flex: 1, alignItems: "center", gap: 6, paddingHorizontal: 4 },
   icon: {
@@ -123,6 +140,7 @@ const s = StyleSheet.create({
     color: colors.gray[700],
     textAlign: "center",
   },
+  labelBelow: { color: colors.gray[500], fontWeight: "600" },
   value: { fontSize: 17, fontWeight: "800", color: colors.gray[900] },
   valueBig: { fontSize: 19, fontWeight: "900", color: colors.gray[900] },
   sub: {
