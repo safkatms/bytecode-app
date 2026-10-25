@@ -21,6 +21,7 @@ import {
   checkIn,
   checkOut,
 } from "@/lib/api/attendance-employee.api";
+import { getOfficeLocation } from "@/lib/api/location.api";
 import {
   adminGetWeeklyTimesheet,
   adminListAttendance,
@@ -31,30 +32,23 @@ import { AlertUI } from "@/components/ui/Alert";
 import { getApiErrorMessage } from "@/lib/api-error";
 import { colors } from "@/components/ui/theme";
 import type { WeeklyTimesheetDay } from "@/types/attendance";
+import {
+  ATTENDANCE_STATUS_COLOR as STATUS_COLOR,
+  ATTENDANCE_STATUS_LABEL as STATUS_LABEL,
+} from "@/lib/attendance-status";
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
-const STATUS_COLOR: Record<string, string> = {
-  present: colors.bytecode[500],
-  late: "#EAB308",
-  absent: colors.red[500],
-  on_leave: colors.gray[400],
-  half_day: colors.bytecode[300],
-  holiday: "#818CF8",
-  sick_leave: colors.red[400],
-  weekend: colors.gray[300],
-};
-
-const STATUS_LABEL: Record<string, string> = {
-  present: "Present",
-  late: "Late",
-  absent: "Absent",
-  on_leave: "Leave",
-  half_day: "Half",
-  holiday: "Holiday",
-  sick_leave: "Sick Leave",
-  weekend: "Weekend",
-};
+function haversineMeters(lat1: number, lon1: number, lat2: number, lon2: number) {
+  const R = 6371000;
+  const toRad = (d: number) => (d * Math.PI) / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
 
 function fmtTime(iso: string | null) {
   if (!iso) return "—";
@@ -118,7 +112,7 @@ function DayRow({
   const isHoliday =
     day.status === "holiday" ||
     day.status === "sick_leave" ||
-    day.status === "on_leave";
+    day.status === "casual_leave";
   const isOff = day.isWeekend || isHoliday;
 
   const d = new Date(day.date);
@@ -130,8 +124,15 @@ function DayRow({
     ? day.day.slice(0, 3)
     : d.toLocaleDateString("en-US", { weekday: "short" });
 
+  const todayIso = new Date().toISOString().slice(0, 10);
+  const isToday = day.date === todayIso;
+  const isFuture = day.date > todayIso;
+  const isPastWithCheckInOnly = day.date < todayIso && !!day.checkInTime && !day.checkOutTime;
+
   const canEdit =
-    !isHoliday && (adminView || !(day.checkInTime && day.checkOutTime));
+    !isHoliday &&
+    (adminView || isToday || isPastWithCheckInOnly) &&
+    !isFuture;
 
   return (
     <TouchableOpacity
@@ -208,6 +209,12 @@ function EntryModal({
     | { status: "ready"; lat: number; lng: number }
   >({ status: "loading" });
 
+  const { data: office } = useQuery({
+    queryKey: ["office-location"],
+    queryFn: getOfficeLocation,
+    staleTime: 5 * 60 * 1000,
+  });
+
   useEffect(() => {
     (async () => {
       const { status } = await Location.requestForegroundPermissionsAsync();
@@ -225,6 +232,12 @@ function EntryModal({
       });
     })();
   }, []);
+
+  const distance =
+    locState.status === "ready" && office
+      ? Math.round(haversineMeters(locState.lat, locState.lng, Number(office.latitude), Number(office.longitude)))
+      : null;
+  const isWithinRadius = distance != null && office ? distance <= office.radiusMeters : null;
 
   const mut = useMutation({
     mutationFn: async () => {
@@ -299,18 +312,38 @@ function EntryModal({
               ? colors.gray[300]
               : locState.status === "denied"
                 ? colors.red[400]
-                : colors.bytecode[500]
+                : isWithinRadius === true
+                  ? colors.bytecode[500]
+                  : isWithinRadius === false
+                    ? "#D97706"
+                    : colors.gray[400]
           }
         />
-        <Text style={s.locText}>
+        <Text style={[s.locText, { flex: 1 }]}>
           {locState.status === "loading"
             ? "Getting location…"
             : locState.status === "denied"
               ? "Location denied — required for submission"
-              : `${locState.lat.toFixed(4)}, ${locState.lng.toFixed(4)}`}
+              : isWithinRadius === true
+                ? "You are at the office"
+                : isWithinRadius === false
+                  ? `${distance}m from office`
+                  : `${locState.lat.toFixed(4)}, ${locState.lng.toFixed(4)}`}
         </Text>
         {locState.status === "loading" && (
           <ActivityIndicator size="small" color={colors.bytecode[500]} />
+        )}
+        {isWithinRadius !== null && (
+          <View
+            style={[
+              s.officeTag,
+              { backgroundColor: isWithinRadius ? `${colors.bytecode[500]}18` : "#FEF3C7" },
+            ]}
+          >
+            <Text style={[s.officeTagText, { color: isWithinRadius ? colors.bytecode[700] : "#D97706" }]}>
+              {isWithinRadius ? "In office" : "Outside"}
+            </Text>
+          </View>
         )}
       </View>
 
@@ -505,7 +538,7 @@ export default function TimesheetScreen() {
     : "Loading…";
 
   return (
-    <View style={[s.root, { paddingTop: insets.top }]}>
+    <View style={s.root}>
       <PageHeader
         title={
           isAdminView && params.employeeName
@@ -513,6 +546,7 @@ export default function TimesheetScreen() {
             : "Weekly Timesheet"
         }
         variant="bytecode"
+        insetTop
       />
 
       <ScrollView
@@ -913,11 +947,15 @@ const s = StyleSheet.create({
     borderRadius: 10,
   },
   locText: {
-    flex: 1,
     fontSize: 12,
     color: colors.gray[500],
-    fontFamily: "monospace",
   },
+  officeTag: {
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  officeTagText: { fontSize: 11, fontWeight: "700" as const },
 
   timePickersWrap: {
     marginHorizontal: 20,

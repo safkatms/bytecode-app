@@ -1,11 +1,11 @@
 // app/(app)/admin/sick-leave/mark.tsx
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View, Text, ScrollView, StyleSheet, TouchableOpacity,
   TextInput, KeyboardAvoidingView, Platform, FlatList, Modal, Alert,
 } from "react-native";
-import { useRouter } from "expo-router";
+import { useRouter, useLocalSearchParams } from "expo-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import DateTimePicker from "@react-native-community/datetimepicker";
@@ -33,6 +33,9 @@ export default function AdminMarkSickLeaveScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const qc = useQueryClient();
+  const { employeeId: empIdParam, employeeName: empNameParam } = useLocalSearchParams<{
+    employeeId?: string; employeeName?: string;
+  }>();
 
   const [empPickerOpen, setEmpPickerOpen] = useState(false);
   const [selectedEmp, setSelectedEmp] = useState<Employee | null>(null);
@@ -47,6 +50,12 @@ export default function AdminMarkSickLeaveScreen() {
     queryFn: () => adminListEmployees({ limit: 200 }),
     staleTime: 2 * 60 * 1000,
   });
+
+  useEffect(() => {
+    if (!empIdParam || !empData?.data.length || selectedEmp) return;
+    const found = empData.data.find((e) => e.id === Number(empIdParam));
+    if (found) setSelectedEmp(found);
+  }, [empData, empIdParam]);
 
   const employees = (empData?.data ?? []).filter((e) => {
     if (!empSearch.trim()) return true;
@@ -70,12 +79,13 @@ export default function AdminMarkSickLeaveScreen() {
 
   return (
     <KeyboardAvoidingView
-      style={[s.root, { paddingTop: insets.top }]}
+      style={s.root}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
       <PageHeader
         title="Mark Sick Leave"
         variant="bytecode"
+        insetTop
         rightTextAction={{
           label: markMut.isPending ? "Saving…" : "Save",
           onPress: () => markMut.mutate(),
@@ -119,6 +129,8 @@ export default function AdminMarkSickLeaveScreen() {
                     <Text style={s.empSub}>{selectedEmp.employeeCode}</Text>
                   </View>
                 </View>
+              ) : empNameParam ? (
+                <Text style={s.textInput}>{empNameParam}</Text>
               ) : (
                 <Text style={s.placeholder}>Select employee…</Text>
               )}

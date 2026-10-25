@@ -141,12 +141,13 @@ export default function AdminLocationFormScreen() {
 
   return (
     <KeyboardAvoidingView
-      style={[s.root, { paddingTop: insets.top }]}
+      style={s.root}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
       <PageHeader
         title="Office Location"
         variant="bytecode"
+        insetTop
         rightTextAction={{
           label: saveMut.isPending ? "Saving…" : "Save",
           onPress: handleSubmit((d) => saveMut.mutate(d)),

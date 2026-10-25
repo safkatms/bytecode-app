@@ -456,12 +456,13 @@ export default function AdminEmployeeFormScreen() {
 
   return (
     <KeyboardAvoidingView
-      style={[s.root, { paddingTop: insets.top }]}
+      style={s.root}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
       <PageHeader
         title={isEdit ? "Edit Employee" : "New Employee"}
         variant="bytecode"
+        insetTop
         rightTextAction={{
           label: isPending ? "Saving…" : "Save",
           onPress: handleSubmit(onSubmit),

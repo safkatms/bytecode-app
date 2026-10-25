@@ -1,4 +1,4 @@
-// app/(app)/sick-leave/apply.tsx
+// app/(app)/leave/apply-sick.tsx
 
 import React, { useState } from "react";
 import {
@@ -7,10 +7,10 @@ import {
 } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { useRouter } from "expo-router";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Feather from "@expo/vector-icons/Feather";
-import { applySickLeave } from "@/lib/api/sick-leave.api";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { applySickLeave, getMySickLeaveBalance } from "@/lib/api/sick-leave.api";
 import { getApiErrorMessage } from "@/lib/api-error";
 import { colors } from "@/components/ui/theme";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -68,6 +68,12 @@ export default function ApplySickLeaveScreen() {
   const insets = useSafeAreaInsets();
   const qc = useQueryClient();
 
+  const year = new Date().getFullYear();
+  const balanceQ = useQuery({
+    queryKey: ["sick-leave-balance", year],
+    queryFn: () => getMySickLeaveBalance(year),
+  });
+
   const [startDate, setStartDate] = useState(toIso(new Date()));
   const [endDate, setEndDate] = useState(toIso(new Date()));
   const [reason, setReason] = useState("");
@@ -112,12 +118,13 @@ export default function ApplySickLeaveScreen() {
 
   return (
     <KeyboardAvoidingView
-      style={[s.root, { paddingTop: insets.top }]}
+      style={s.root}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
       <PageHeader
         title="Apply Sick Leave"
         variant="bytecode"
+        insetTop
         rightTextAction={{
           label: mut.isPending ? "Saving…" : "Submit",
           onPress: submit,
@@ -131,6 +138,24 @@ export default function ApplySickLeaveScreen() {
         showsVerticalScrollIndicator={false}
       >
         {submitError && <AlertUI message={submitError} type="error" />}
+
+        {/* Balance */}
+        {balanceQ.data && (
+          <View style={s.balanceCard}>
+            {[
+              { label: "Total", value: balanceQ.data.totalDays },
+              { label: "Used", value: balanceQ.data.usedDays },
+              { label: "Remaining", value: balanceQ.data.remainingDays },
+            ].map((x) => (
+              <View key={x.label} style={s.balanceItem}>
+                <Text style={[s.balanceValue, x.label === "Remaining" && { color: (x.value ?? 0) > 0 ? colors.green[600] : colors.red[500] }]}>
+                  {x.value ?? "—"}
+                </Text>
+                <Text style={s.balanceLabel}>{x.label}</Text>
+              </View>
+            ))}
+          </View>
+        )}
 
         {/* Dates */}
         <View style={s.sectionLabel}>
@@ -314,4 +339,12 @@ const s = StyleSheet.create({
   },
   iosPickerTitle: { fontSize: 14, fontWeight: "600", color: colors.gray[700] },
   iosPickerDone: { fontSize: 14, fontWeight: "700", color: colors.bytecode[600] },
+
+  balanceCard: {
+    flexDirection: "row", marginBottom: 8, backgroundColor: "#fff",
+    borderRadius: 14, borderWidth: 1, borderColor: colors.gray[100], paddingVertical: 14,
+  },
+  balanceItem: { flex: 1, alignItems: "center", gap: 2 },
+  balanceValue: { fontSize: 22, fontWeight: "800", color: colors.bytecode[700] },
+  balanceLabel: { fontSize: 11, color: colors.gray[500], fontWeight: "600" },
 });

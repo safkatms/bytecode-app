@@ -13,7 +13,6 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Feather from "@expo/vector-icons/Feather";
 import {
   adminListTeams,
@@ -107,7 +106,6 @@ function TeamRow({
 
 export default function AdminTeamsScreen() {
   const router = useRouter();
-  const insets = useSafeAreaInsets();
   const qc = useQueryClient();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
@@ -150,10 +148,11 @@ export default function AdminTeamsScreen() {
   const meta = data?.meta;
 
   return (
-    <View style={[s.root, { paddingTop: insets.top }]}>
+    <View style={s.root}>
       <PageHeader
         title="Teams"
         variant="bytecode"
+        insetTop
         rightActions={[
           {
             icon: "plus",

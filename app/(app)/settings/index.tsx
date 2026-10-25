@@ -190,8 +190,8 @@ export default function SettingsScreen() {
   ];
 
   return (
-    <View style={[styles.root, { paddingTop: insets.top }]}>
-      <PageHeader title="Settings" variant="bytecode" />
+    <View style={styles.root}>
+      <PageHeader title="Settings" variant="bytecode" insetTop />
 
       <ScrollView
         contentContainerStyle={[

@@ -8,6 +8,7 @@ import {
 } from "react-native";
 import Feather from "@expo/vector-icons/Feather";
 import { useRouter } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors } from "@/components/ui/theme";
 
 type HeaderVariant = "bytecode" | "white";
@@ -27,10 +28,17 @@ export interface HeaderTextAction {
 
 interface PageHeaderProps {
   title: string;
+  subtitle?: string;
   variant?: HeaderVariant;
   backIcon?: BackIcon;
   rightActions?: HeaderAction[];
   rightTextAction?: HeaderTextAction; // for Save/Done text buttons
+  /**
+   * Let the header own the top safe-area inset so the gradient runs behind the
+   * status bar, matching the dashboard hero. The screen must then stop applying
+   * `paddingTop: insets.top` to its own root.
+   */
+  insetTop?: boolean;
   style?: ViewStyle;
 }
 
@@ -40,41 +48,52 @@ const CONFIG: Record<
     bg: string;
     borderColor?: string;
     titleColor: string;
+    subtitleColor: string;
     iconColor: string;
     iconBg: string;
+    iconBorder: string;
   }
 > = {
   bytecode: {
-    bg: colors.bytecode[700],
+    bg: "transparent",
     titleColor: "#fff",
+    subtitleColor: "rgba(255,255,255,0.68)",
     iconColor: "#fff",
     iconBg: "rgba(255,255,255,0.15)",
+    iconBorder: "rgba(255,255,255,0.14)",
   },
   white: {
     bg: "#fff",
     borderColor: colors.gray[100],
     titleColor: colors.gray[900],
+    subtitleColor: colors.gray[400],
     iconColor: colors.gray[700],
-    iconBg: "transparent",
+    iconBg: colors.gray[50],
+    iconBorder: colors.gray[100],
   },
 };
 
 export function PageHeader({
   title,
+  subtitle,
   variant = "white",
   backIcon = "arrow-left",
   rightActions = [],
   rightTextAction,
+  insetTop = false,
   style,
 }: PageHeaderProps) {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const cfg = CONFIG[variant];
+  const isGradient = variant === "bytecode";
 
   return (
     <View
       style={[
         s.header,
         {
+          paddingTop: (insetTop ? insets.top : 0) + 14,
           backgroundColor: cfg.bg,
           borderBottomColor: cfg.borderColor ?? "transparent",
           borderBottomWidth: cfg.borderColor ? 1 : 0,
@@ -82,15 +101,44 @@ export function PageHeader({
         style,
       ]}
     >
+      {isGradient && (
+        <>
+          <View style={s.gradientBase} />
+          <View style={s.gradientMid} />
+          <View style={s.gradientBlobTop} />
+          <View style={s.gradientBlobBottom} />
+        </>
+      )}
+
       {/* Back button */}
-      <TouchableOpacity onPress={() => router.back()} hitSlop={8}>
-        <View style={[s.iconBtn, { backgroundColor: cfg.iconBg }]}>
+      <TouchableOpacity onPress={() => router.back()} hitSlop={8} activeOpacity={0.8}>
+        <View
+          style={[
+            s.iconBtn,
+            { backgroundColor: cfg.iconBg, borderColor: cfg.iconBorder },
+          ]}
+        >
           <Feather name={backIcon} size={18} color={cfg.iconColor} />
         </View>
       </TouchableOpacity>
 
       {/* Title */}
-      <Text style={[s.title, { color: cfg.titleColor }]}>{title}</Text>
+      <View style={s.titleWrap}>
+        <Text
+          style={[s.title, { color: cfg.titleColor }]}
+          numberOfLines={1}
+        >
+          {title}
+        </Text>
+        {subtitle && (
+          <Text
+            style={[s.subtitle, { color: cfg.subtitleColor }]}
+            numberOfLines={1}
+          >
+            {subtitle}
+          </Text>
+        )}
+      </View>
 
       {/* Right side: text action takes priority, then icon actions */}
       {rightTextAction ? (
@@ -98,20 +146,19 @@ export function PageHeader({
           onPress={rightTextAction.onPress}
           hitSlop={8}
           disabled={rightTextAction.disabled}
+          activeOpacity={0.8}
         >
           <View
             style={[
               s.textActionBtn,
-              variant === "bytecode" && s.textActionBtnbytecode,
+              isGradient ? s.textActionBtnGradient : s.textActionBtnLight,
               rightTextAction.disabled && s.textActionBtnDisabled,
             ]}
           >
             <Text
               style={[
                 s.textActionLabel,
-                {
-                  color: variant === "bytecode" ? "#fff" : colors.bytecode[700],
-                },
+                { color: isGradient ? "#fff" : colors.bytecode[700] },
               ]}
             >
               {rightTextAction.label}
@@ -121,8 +168,18 @@ export function PageHeader({
       ) : rightActions.length > 0 ? (
         <View style={s.rightGroup}>
           {rightActions.slice(0, 2).map((action, i) => (
-            <TouchableOpacity key={i} onPress={action.onPress} hitSlop={8}>
-              <View style={[s.iconBtn, { backgroundColor: cfg.iconBg }]}>
+            <TouchableOpacity
+              key={i}
+              onPress={action.onPress}
+              hitSlop={8}
+              activeOpacity={0.8}
+            >
+              <View
+                style={[
+                  s.iconBtn,
+                  { backgroundColor: cfg.iconBg, borderColor: cfg.iconBorder },
+                ]}
+              >
                 <Feather name={action.icon} size={18} color={cfg.iconColor} />
                 {!!action.badge && action.badge > 0 && (
                   <View style={s.badge}>
@@ -144,42 +201,92 @@ const s = StyleSheet.create({
   header: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
+    gap: 12,
     paddingHorizontal: 16,
-    paddingVertical: 14,
+    paddingBottom: 14,
+    overflow: "hidden",
+    position: "relative",
   },
-  title: { fontSize: 17, fontWeight: "700" },
+
+  // gradient layers — mirror the dashboard hero, tuned for a compact bar
+  gradientBase: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: colors.bytecode[800],
+  },
+  gradientMid: {
+    position: "absolute",
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: "25%",
+    backgroundColor: colors.bytecode[600],
+    opacity: 0.5,
+    borderTopLeftRadius: 140,
+    borderBottomLeftRadius: 100,
+  },
+  gradientBlobTop: {
+    position: "absolute",
+    width: 190,
+    height: 190,
+    borderRadius: 95,
+    top: -115,
+    right: -50,
+    backgroundColor: colors.bytecode[500],
+    opacity: 0.22,
+  },
+  gradientBlobBottom: {
+    position: "absolute",
+    width: 150,
+    height: 150,
+    borderRadius: 75,
+    bottom: -105,
+    left: -45,
+    backgroundColor: colors.bytecode[500],
+    opacity: 0.14,
+  },
+
+  titleWrap: { flex: 1 },
+  title: { fontSize: 19, fontWeight: "800" },
+  subtitle: { fontSize: 12, fontWeight: "500", marginTop: 2 },
+
   iconBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 10,
+    width: 40,
+    height: 40,
+    borderRadius: 14,
     alignItems: "center",
     justifyContent: "center",
+    borderWidth: 1,
   },
   rightGroup: { flexDirection: "row", gap: 8 },
-  placeholder: { width: 32 },
+  placeholder: { width: 40 },
+
   badge: {
     position: "absolute",
     top: -4,
     right: -4,
-    width: 16,
-    height: 16,
-    borderRadius: 8,
+    minWidth: 17,
+    height: 17,
+    paddingHorizontal: 4,
+    borderRadius: 9,
     backgroundColor: colors.red[500],
     alignItems: "center",
     justifyContent: "center",
   },
   badgeText: { fontSize: 9, fontWeight: "800", color: "#fff" },
+
   textActionBtn: {
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 7,
+    borderRadius: 14,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.2)",
+  },
+  textActionBtnGradient: {
+    borderColor: "rgba(255,255,255,0.18)",
     backgroundColor: "rgba(255,255,255,0.18)",
   },
-  textActionBtnbytecode: {
-    // already set above, kept separate so white variant can override
+  textActionBtnLight: {
+    borderColor: colors.bytecode[100],
+    backgroundColor: colors.bytecode[50],
   },
   textActionBtnDisabled: { opacity: 0.5 },
   textActionLabel: { fontSize: 14, fontWeight: "700" },

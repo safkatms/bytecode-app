@@ -57,6 +57,18 @@ const SECTIONS: { title: string; items: MenuItem[] }[] = [
         path: "/(app)/admin/sick-leave",
       },
       {
+        icon: "umbrella",
+        label: "Casual Leave",
+        sublabel: "Review casual leave requests",
+        path: "/(app)/admin/casual-leave",
+      },
+      {
+        icon: "sun",
+        label: "Holidays",
+        sublabel: "Manage public and office holidays",
+        path: "/(app)/admin/holidays",
+      },
+      {
         icon: "bar-chart-2",
         label: "Reports",
         sublabel: "Attendance reports and exports",
@@ -103,8 +115,8 @@ export default function AdminMenuScreen() {
   const router = useRouter();
 
   return (
-    <View style={[s.root, { paddingTop: insets.top }]}>
-      <PageHeader title="Admin Menu" variant="bytecode" />
+    <View style={s.root}>
+      <PageHeader title="Admin Menu" variant="bytecode" insetTop />
       <ScrollView
         contentContainerStyle={[s.content, { paddingBottom: insets.bottom + 32 }]}
         showsVerticalScrollIndicator={false}

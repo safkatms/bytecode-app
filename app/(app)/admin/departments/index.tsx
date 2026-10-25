@@ -13,7 +13,6 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Feather from "@expo/vector-icons/Feather";
 import {
   adminListDepartments,
@@ -114,7 +113,6 @@ function DepartmentRow({
 
 export default function AdminDepartmentsScreen() {
   const router = useRouter();
-  const insets = useSafeAreaInsets();
   const qc = useQueryClient();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
@@ -157,10 +155,11 @@ export default function AdminDepartmentsScreen() {
   const meta = data?.meta;
 
   return (
-    <View style={[s.root, { paddingTop: insets.top }]}>
+    <View style={s.root}>
       <PageHeader
         title="Departments"
         variant="bytecode"
+        insetTop
         rightActions={[
           {
             icon: "plus",

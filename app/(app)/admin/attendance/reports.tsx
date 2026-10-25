@@ -9,8 +9,8 @@ export default function ReportsScreen() {
   const insets = useSafeAreaInsets();
 
   return (
-    <View style={[s.root, { paddingTop: insets.top }]}>
-      <PageHeader title="Reports" variant="bytecode" />
+    <View style={s.root}>
+      <PageHeader title="Reports" variant="bytecode" insetTop />
 
       <View style={[s.body, { paddingBottom: insets.bottom + 32 }]}>
         <View style={s.card}>

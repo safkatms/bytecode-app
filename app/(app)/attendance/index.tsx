@@ -17,27 +17,10 @@ import { getTodayStatus } from "@/lib/api/attendance-employee.api";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { colors } from "@/components/ui/theme";
 
-const STATUS_COLOR: Record<string, string> = {
-  present: colors.bytecode[500],
-  late: "#EAB308",
-  absent: colors.red[500],
-  on_leave: colors.gray[400],
-  half_day: colors.bytecode[300],
-  holiday: "#818CF8",
-  sick_leave: colors.red[400],
-  weekend: colors.gray[300],
-};
-
-const STATUS_LABEL: Record<string, string> = {
-  present: "Present",
-  late: "Late",
-  absent: "Absent",
-  on_leave: "On Leave",
-  half_day: "Half Day",
-  holiday: "Holiday",
-  sick_leave: "Sick Leave",
-  weekend: "Weekend",
-};
+import {
+  ATTENDANCE_STATUS_COLOR as STATUS_COLOR,
+  ATTENDANCE_STATUS_LABEL as STATUS_LABEL,
+} from "@/lib/attendance-status";
 
 function fmtTime(iso: string | null) {
   if (!iso) return "—";
@@ -88,12 +71,13 @@ export default function AttendanceIndexScreen() {
     !isLoading &&
     !today?.checkedIn &&
     !today?.status?.includes("sick_leave") &&
+    !today?.status?.includes("casual_leave") &&
     !today?.status?.includes("holiday");
   const canCheckOut = !isLoading && today?.checkedIn && !today?.checkedOut;
 
   return (
-    <View style={[s.root, { paddingTop: insets.top }]}>
-      <PageHeader title="Attendance" variant="bytecode" />
+    <View style={s.root}>
+      <PageHeader title="Attendance" variant="bytecode" insetTop />
 
       <ScrollView
         contentContainerStyle={[

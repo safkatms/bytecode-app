@@ -11,7 +11,6 @@ import {
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { useRouter } from "expo-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Feather from "@expo/vector-icons/Feather";
 import * as Location from "expo-location";
 import { checkIn } from "@/lib/api/attendance-employee.api";
@@ -47,7 +46,6 @@ function fmtTimeDisplay(d: Date) {
 
 export default function CheckInScreen() {
   const router = useRouter();
-  const insets = useSafeAreaInsets();
   const qc = useQueryClient();
   const [error, setError] = useState("");
 
@@ -120,8 +118,8 @@ export default function CheckInScreen() {
   }
 
   return (
-    <View style={[s.root, { paddingTop: insets.top }]}>
-      <PageHeader title="Check In" variant="bytecode" />
+    <View style={s.root}>
+      <PageHeader title="Check In" variant="bytecode" insetTop />
 
       <View style={s.content}>
         {error ? <AlertUI message={error} type="error" /> : null}

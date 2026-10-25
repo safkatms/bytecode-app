@@ -9,7 +9,6 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Feather from "@expo/vector-icons/Feather";
 import { getOfficeLocation } from "@/lib/api/location.api";
 import { colors } from "@/components/ui/theme";
@@ -18,7 +17,6 @@ import { PageHeader } from "@/components/ui/PageHeader";
 
 export default function AdminLocationsScreen() {
   const router = useRouter();
-  const insets = useSafeAreaInsets();
 
   const {
     data: location,
@@ -31,8 +29,8 @@ export default function AdminLocationsScreen() {
   });
 
   return (
-    <View style={[s.root, { paddingTop: insets.top }]}>
-      <PageHeader title="Office Location" variant="bytecode" />
+    <View style={s.root}>
+      <PageHeader title="Office Location" variant="bytecode" insetTop />
 
       {isLoading ? (
         <View style={s.center}>

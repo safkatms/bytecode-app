@@ -10,7 +10,6 @@ import {
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import Feather from "@expo/vector-icons/Feather";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { getAccessToken } from "@/lib/axios";
 import { useAuthStore } from "@/store/auth.store";
@@ -18,9 +17,9 @@ import { colors } from "@/components/ui/theme";
 import { getApiErrorMessage } from "@/lib/api-error";
 import { switchUser } from "@/lib/api/auth.api";
 import { getUsers, type UserItem } from "@/lib/api/users.api";
+import { PageHeader } from "@/components/ui/PageHeader";
 
 export default function SwitchUserScreen() {
-  const insets = useSafeAreaInsets();
   const router = useRouter();
   const queryClient = useQueryClient();
   const { user, setUser, setOriginalAdmin, setAdminToken, clearImpersonation } =
@@ -54,14 +53,8 @@ export default function SwitchUserScreen() {
   };
 
   return (
-    <View style={[styles.root, { paddingTop: insets.top }]}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} hitSlop={8}>
-          <Feather name="arrow-left" size={22} color={colors.gray[900]} />
-        </TouchableOpacity>
-        <Text style={styles.title}>Switch user</Text>
-        <View style={{ width: 22 }} />
-      </View>
+    <View style={styles.root}>
+      <PageHeader title="Switch user" variant="bytecode" insetTop />
 
       {isLoading && (
         <View style={styles.center}>

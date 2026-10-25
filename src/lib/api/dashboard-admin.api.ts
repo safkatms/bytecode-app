@@ -4,8 +4,9 @@ import type { ApiResponse } from '@/types/api';
 export interface AdminOverview {
     employees: { total: number; active: number; inactive: number };
     todayAttendance: {
-        present: number; late: number; absent: number;
-        onLeave: number; halfDay: number; notMarked: number;
+        present: number; late: number;
+        onCasualLeave: number; onSickLeave: number;
+        notMarked: number;
     };
     devices: { trusted: number };
 }

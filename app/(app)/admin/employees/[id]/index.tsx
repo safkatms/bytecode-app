@@ -164,10 +164,11 @@ export default function AdminEmployeeDetailScreen() {
 
   return (
     <>
-      <View style={[s.root, { paddingTop: insets.top }]}>
+      <View style={s.root}>
         <PageHeader
           title="Employee Detail"
           variant="bytecode"
+          insetTop
           rightActions={[
             {
               icon: "key",
@@ -312,18 +313,29 @@ export default function AdminEmployeeDetailScreen() {
               }
             >
               <View style={s.actionIcon}>
-                <Feather
-                  name="calendar"
-                  size={17}
-                  color={colors.bytecode[600]}
-                />
+                <Feather name="calendar" size={17} color={colors.bytecode[600]} />
               </View>
               <Text style={s.actionLabel}>View Attendance</Text>
-              <Feather
-                name="chevron-right"
-                size={16}
-                color={colors.gray[400]}
-              />
+              <Feather name="chevron-right" size={16} color={colors.gray[400]} />
+            </TouchableOpacity>
+            <View style={s.sep} />
+            <TouchableOpacity
+              style={s.actionItem}
+              onPress={() =>
+                router.push({
+                  pathname: "/(app)/admin/employees/[id]/leave",
+                  params: {
+                    id: emp.id,
+                    name: `${emp.user.firstName ?? ""} ${emp.user.lastName ?? ""}`.trim(),
+                  },
+                })
+              }
+            >
+              <View style={s.actionIcon}>
+                <Feather name="umbrella" size={17} color={colors.bytecode[600]} />
+              </View>
+              <Text style={s.actionLabel}>View Leave</Text>
+              <Feather name="chevron-right" size={16} color={colors.gray[400]} />
             </TouchableOpacity>
           </View>
 

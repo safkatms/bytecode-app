@@ -133,12 +133,13 @@ export default function ProfileScreen() {
 
   return (
     <KeyboardAvoidingView
-      style={[s.root, { paddingTop: insets.top }]}
+      style={s.root}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
       <PageHeader
         title="Edit Profile"
         variant="bytecode"
+        insetTop
         rightTextAction={{
           label: saveMut.isPending ? "Saving…" : "Save",
           onPress: handleSubmit((d) => saveMut.mutate(d)),

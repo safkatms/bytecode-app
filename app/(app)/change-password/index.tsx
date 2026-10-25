@@ -132,10 +132,10 @@ export default function ChangePasswordScreen() {
 
   return (
     <KeyboardAvoidingView
-      style={[s.root, { paddingTop: insets.top }]}
+      style={s.root}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
-      <PageHeader title="Change Password" variant="bytecode" />
+      <PageHeader title="Change Password" variant="bytecode" insetTop />
       <ScrollView
         contentContainerStyle={[
           s.content,

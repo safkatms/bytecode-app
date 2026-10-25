@@ -4,16 +4,12 @@ import { usePathname, useRouter } from "expo-router";
 import Feather from "@expo/vector-icons/Feather";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors } from "../ui/theme";
-import { useAuthStore } from "@/store/auth.store";
 
 export function BottomNav() {
-  const { user } = useAuthStore();
-  const isAdmin = user?.role === "admin";
-
   const nav = [
     { href: "/(app)/dashboard", label: "Dashboard", icon: "home" },
     { href: "/(app)/attendance", label: "Attendance", icon: "clock" },
-    { href: "/(app)/sick-leave", label: "Sick Leave", icon: "thermometer" },
+    { href: "/(app)/leave", label: "Leave", icon: "sun" },
   ].filter(Boolean) as { href: string; label: string; icon: string }[];
 
   const pathname = usePathname();

@@ -25,34 +25,18 @@ import { getApiErrorMessage } from "@/lib/api-error";
 import { colors } from "@/components/ui/theme";
 import { Spinner } from "@/components/ui/Spinner";
 import { PageHeader } from "@/components/ui/PageHeader";
-import type { AttendanceStatus } from "@/types/attendance";
 import { AlertUI } from "@/components/ui/Alert";
+import {
+  ATTENDANCE_STATUS_COLOR as STATUS_COLOR,
+  ATTENDANCE_STATUS_LABEL as STATUS_LABEL,
+} from "@/lib/attendance-status";
 
 // ─── constants ───────────────────────────────────────────────────────────────
 
-const STATUS_COLOR: Record<AttendanceStatus, string> = {
+const AUTO_STATUS_COLOR = {
   present: colors.bytecode[500],
-  absent: colors.red[500],
   late: "#EAB308",
-  half_day: colors.bytecode[300],
-  on_leave: colors.gray[400],
-  holiday: "#818CF8",
-  sick_leave: colors.red[400],
-  weekend: colors.gray[300],
-};
-
-const STATUS_LABEL: Record<AttendanceStatus, string> = {
-  present: "Present",
-  absent: "Absent",
-  late: "Late",
-  half_day: "Half Day",
-  on_leave: "On Leave",
-  holiday: "Holiday",
-  sick_leave: "Sick Leave",
-  weekend: "Weekend",
-};
-
-const ALL_STATUSES = Object.keys(STATUS_LABEL) as AttendanceStatus[];
+} as const;
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 
@@ -98,7 +82,6 @@ export default function AdminAttendanceDetailScreen() {
   const qc = useQueryClient();
 
   const [editing, setEditing] = useState(edit === "1");
-  const [status, setStatus] = useState<AttendanceStatus>("present");
   const [checkInDate, setCheckInDate] = useState<Date | null>(null);
   const [checkOutDate, setCheckOutDate] = useState<Date | null>(null);
   const [note, setNote] = useState("");
@@ -113,7 +96,6 @@ export default function AdminAttendanceDetailScreen() {
 
   React.useEffect(() => {
     if (record) {
-      setStatus(record.status);
       setCheckInDate(record.checkInTime ? new Date(record.checkInTime) : null);
       setCheckOutDate(
         record.checkOutTime ? new Date(record.checkOutTime) : null,
@@ -122,7 +104,13 @@ export default function AdminAttendanceDetailScreen() {
     }
   }, [record]);
 
-  // Auto-calculate late minutes: minutes after 09:00 AM on the attendance date
+  const status = React.useMemo<"present" | "late">(() => {
+    if (!checkInDate) return "present";
+    const h = checkInDate.getHours();
+    const m = checkInDate.getMinutes();
+    return h > 10 || (h === 10 && m > 30) ? "late" : "present";
+  }, [checkInDate]);
+
   const lateMinutes = React.useMemo(() => {
     if (!checkInDate) return 0;
     const officeStart = new Date(checkInDate);
@@ -199,20 +187,25 @@ export default function AdminAttendanceDetailScreen() {
   const dept = deptName((record.employee as any)?.department);
 
   return (
-    <View style={[s.root, { paddingTop: insets.top }]}>
+    <View style={s.root}>
       <PageHeader
         title="Attendance Detail"
         variant="bytecode"
-        rightActions={[
-          {
-            icon: editing ? "x" : "edit-2",
-            onPress: () => {
-              setEditing((v) => !v);
-              setError("");
-            },
-          },
-          { icon: "trash-2", onPress: confirmDelete },
-        ]}
+        insetTop
+        rightActions={
+          ["casual_leave", "sick_leave", "holiday"].includes(record.status)
+            ? []
+            : [
+                {
+                  icon: editing ? "x" : "edit-2",
+                  onPress: () => {
+                    setEditing((v) => !v);
+                    setError("");
+                  },
+                },
+                { icon: "trash-2", onPress: confirmDelete },
+              ]
+        }
       />
 
       <ScrollView
@@ -287,34 +280,6 @@ export default function AdminAttendanceDetailScreen() {
           <View style={s.editCard}>
             {error ? <AlertUI message={error} type="error" /> : null}
 
-            {/* Status */}
-            <Text style={s.fieldLabel}>STATUS</Text>
-            <View style={s.statusChips}>
-              {ALL_STATUSES.map((st) => (
-                <TouchableOpacity
-                  key={st}
-                  style={[
-                    s.statusChip,
-                    status === st && {
-                      backgroundColor: STATUS_COLOR[st],
-                      borderColor: STATUS_COLOR[st],
-                    },
-                  ]}
-                  onPress={() => setStatus(st)}
-                  activeOpacity={0.8}
-                >
-                  <Text
-                    style={[
-                      s.statusChipText,
-                      status === st && { color: "#fff" },
-                    ]}
-                  >
-                    {STATUS_LABEL[st]}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-
             {/* Check-in time */}
             <Text style={s.fieldLabel}>CHECK-IN TIME</Text>
             <View style={s.timeRow}>
@@ -375,22 +340,41 @@ export default function AdminAttendanceDetailScreen() {
               )}
             </View>
 
-            {/* Late minutes — auto-calculated */}
-            <Text style={s.fieldLabel}>LATE MINUTES (auto)</Text>
+            {/* Status + late minutes (auto) */}
+            <Text style={s.fieldLabel}>STATUS (AUTO)</Text>
             <View style={s.lateDisplay}>
               <Feather
-                name="clock"
+                name="activity"
                 size={14}
-                color={lateMinutes > 0 ? "#D97706" : colors.bytecode[500]}
+                color={AUTO_STATUS_COLOR[status]}
               />
               <Text
                 style={[
                   s.lateDisplayText,
-                  { color: lateMinutes > 0 ? "#D97706" : colors.bytecode[600] },
+                  { color: AUTO_STATUS_COLOR[status], flex: 1 },
                 ]}
               >
-                {lateMinutes > 0 ? `${lateMinutes} min late` : "On time"}
+                {status === "late" ? "Late" : "Present"}
               </Text>
+              {lateMinutes > 0 ? (
+                <View style={s.latePill}>
+                  <Feather name="clock" size={11} color="#D97706" />
+                  <Text style={s.latePillText}>{lateMinutes} min late</Text>
+                </View>
+              ) : (
+                <View
+                  style={[
+                    s.latePill,
+                    { backgroundColor: `${colors.bytecode[500]}18` },
+                  ]}
+                >
+                  <Text
+                    style={[s.latePillText, { color: colors.bytecode[600] }]}
+                  >
+                    On time
+                  </Text>
+                </View>
+              )}
             </View>
 
             {/* Note */}
@@ -552,16 +536,16 @@ const s = StyleSheet.create({
     marginTop: 6,
   },
 
-  statusChips: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
-  statusChip: {
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: 20,
-    borderWidth: 1.5,
-    borderColor: colors.gray[200],
-    backgroundColor: "#fff",
+  latePill: {
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    gap: 4,
+    backgroundColor: "#FEF3C7",
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
   },
-  statusChipText: { fontSize: 12, fontWeight: "700", color: colors.gray[500] },
+  latePillText: { fontSize: 11, fontWeight: "700" as const, color: "#D97706" },
 
   timeRow: { flexDirection: "row", alignItems: "center", gap: 8 },
   timeBtn: {

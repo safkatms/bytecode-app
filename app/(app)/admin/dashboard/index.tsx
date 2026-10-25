@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import {
   View,
   Text,
@@ -10,15 +10,10 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import Feather from "@expo/vector-icons/Feather";
-import * as Location from "expo-location";
-import { getOfficeLocation } from "@/lib/api/location.api";
 import {
   getAdminOverview,
-  getAdminAttendanceTrend,
   getAdminDepartmentBreakdown,
   getAdminRecentActivity,
-  getAdminLateReport,
 } from "@/lib/api/dashboard-admin.api";
 import { getEmployeeOverview } from "@/lib/api/dashboard-employee.api";
 import { useAuthStore } from "@/store/auth.store";
@@ -26,174 +21,98 @@ import { Spinner } from "@/components/ui/Spinner";
 import { AlertUI } from "@/components/ui/Alert";
 import { getApiErrorMessage } from "@/lib/api-error";
 import { colors } from "@/components/ui/theme";
-import type {
-  RecentActivityItem,
-  LateReportItem,
-} from "@/lib/api/dashboard-admin.api";
+import {
+  ATTENDANCE_STATUS_COLOR,
+  ATTENDANCE_STATUS_LABEL,
+} from "@/lib/attendance-status";
+import {
+  usePresence,
+  DashboardHero,
+  FloatingCard,
+  CheckInCta,
+  Section,
+  Card,
+  CardDivider,
+  StatsGrid,
+  STAT_PALETTE,
+  QuickActions,
+  PersonRow,
+  ProgressRow,
+  fmtClockTime,
+  fmtLongDate,
+  fmtShortDate,
+  fmtMonth,
+} from "@/components/dashboard";
 
-function haversineMeters(
-  lat1: number,
-  lon1: number,
-  lat2: number,
-  lon2: number,
-): number {
-  const R = 6371000;
-  const toRad = (d: number) => (d * Math.PI) / 180;
-  const dLat = toRad(lat2 - lat1);
-  const dLon = toRad(lon2 - lon1);
-  const a =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-}
+const PERSONAL_ACTIONS = [
+  {
+    icon: "thermometer" as const,
+    label: "Sick Leave",
+    sub: "Apply for sick leave",
+    bg: colors.bytecode[50],
+    color: colors.bytecode[600],
+    path: "/(app)/leave/apply-sick",
+  },
+  {
+    icon: "umbrella" as const,
+    label: "Casual Leave",
+    sub: "Apply for casual leave",
+    bg: colors.green[100],
+    color: colors.green[600],
+    path: "/(app)/leave/apply-casual",
+  },
+  {
+    icon: "clock" as const,
+    label: "Timesheet",
+    sub: "View your timesheet",
+    bg: colors.bytecode[50],
+    color: colors.bytecode[600],
+    path: "/(app)/attendance/timesheet",
+  },
+];
 
-function SectionHeader({
-  title,
-  onPress,
-}: {
-  title: string;
-  onPress?: () => void;
-}) {
-  return (
-    <View style={styles.sectionHeader}>
-      <Text style={styles.sectionTitle}>{title}</Text>
-      {onPress && (
-        <TouchableOpacity
-          onPress={onPress}
-          hitSlop={8}
-          style={styles.sectionActionBtn}
-        >
-          <Text style={styles.sectionAction}>See all</Text>
-          <Feather
-            name="chevron-right"
-            size={14}
-            color={colors.bytecode[500]}
-          />
-        </TouchableOpacity>
-      )}
-    </View>
-  );
-}
+const ADMIN_ACTIONS = [
+  {
+    icon: "calendar" as const,
+    label: "Attendance",
+    path: "/(app)/admin/attendance",
+  },
+  {
+    icon: "thermometer" as const,
+    label: "Sick Leave",
+    path: "/(app)/admin/sick-leave",
+  },
+  {
+    icon: "umbrella" as const,
+    label: "Casual Leave",
+    bg: colors.green[100],
+    color: colors.green[600],
+    path: "/(app)/admin/casual-leave",
+  },
+  {
+    icon: "sun" as const,
+    label: "Holidays",
+    bg: colors.amber[50],
+    color: colors.amber[600],
+    path: "/(app)/admin/holidays",
+  },
+  {
+    icon: "bar-chart-2" as const,
+    label: "Reports",
+    path: "/(app)/admin/attendance/reports",
+  },
+];
 
 function deptName(d: { id: number; name: string } | string | null | undefined) {
   if (!d) return "—";
   return typeof d === "object" ? d.name : d;
 }
 
-function ActivityRow({ item }: { item: RecentActivityItem }) {
-  const STATUS_COLOR: Record<string, string> = {
-    present: colors.bytecode[500],
-    late: "#EAB308",
-    absent: colors.red[500],
-    on_leave: colors.gray[400],
-    half_day: colors.bytecode[300],
-  };
-  const color = STATUS_COLOR[item.status] ?? colors.gray[400];
-  const fmtTime = (iso: string | null) =>
-    iso
-      ? new Date(iso).toLocaleTimeString("en-US", {
-          hour: "2-digit",
-          minute: "2-digit",
-          hour12: true,
-        })
-      : "—";
-
-  return (
-    <View style={styles.activityRow}>
-      <View style={[styles.activityAvatar, { backgroundColor: `${color}18` }]}>
-        <Text style={[styles.activityAvatarText, { color }]}>
-          {item.employee
-            .split(" ")
-            .map((n) => n[0])
-            .join("")
-            .slice(0, 2)
-            .toUpperCase()}
-        </Text>
-      </View>
-      <View style={styles.activityInfo}>
-        <Text style={styles.activityName} numberOfLines={1}>
-          {item.employee}
-        </Text>
-        <Text style={styles.activityMeta}>
-          {deptName(item.department)} · {fmtTime(item.checkInTime)}
-          {item.isManual ? " · Manual" : ""}
-        </Text>
-      </View>
-      <View style={[styles.statusPill, { backgroundColor: `${color}15` }]}>
-        <Text style={[styles.statusPillText, { color }]}>
-          {item.status.replace("_", " ")}
-        </Text>
-      </View>
-    </View>
-  );
-}
-
-function LateRow({ item }: { item: LateReportItem }) {
-  const hours = Math.floor(item.totalLateMinutes / 60);
-  const mins = item.totalLateMinutes % 60;
-  const timeStr = hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
-  return (
-    <View style={styles.lateRow}>
-      <View style={styles.lateAvatar}>
-        <Text style={styles.lateAvatarText}>
-          {`${item.employee.user.firstName[0]}${item.employee.user.lastName[0]}`.toUpperCase()}
-        </Text>
-      </View>
-      <View style={styles.lateInfo}>
-        <Text style={styles.lateName}>
-          {item.employee.user.firstName} {item.employee.user.lastName}
-        </Text>
-        <Text style={styles.lateMeta}>
-          {deptName(item.employee.department)} · {item.count} times
-        </Text>
-      </View>
-      <Text style={styles.lateTime}>{timeStr}</Text>
-    </View>
-  );
-}
-
-function DeptRow({
-  item,
-}: {
-  item: {
-    department: string;
-    total: number;
-    present: number;
-    absent: number;
-    late: number;
-  };
-}) {
-  const pct =
-    item.total > 0 ? Math.round((item.present / item.total) * 100) : 0;
-  const barColor =
-    pct >= 80 ? colors.bytecode[500] : pct >= 50 ? "#EAB308" : colors.red[500];
-  return (
-    <View style={styles.deptRow}>
-      <View style={styles.deptHeader}>
-        <Text style={styles.deptName} numberOfLines={1}>
-          {item.department}
-        </Text>
-        <Text style={styles.deptPct}>{pct}%</Text>
-      </View>
-      <View style={styles.deptTrack}>
-        <View
-          style={[
-            styles.deptFill,
-            { width: `${pct}%`, backgroundColor: barColor },
-          ]}
-        />
-      </View>
-      <Text style={styles.deptMeta}>
-        {item.present}/{item.total} present · {item.late} late
-      </Text>
-    </View>
-  );
-}
-
 export default function AdminDashboardScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { user } = useAuthStore();
+  const presence = usePresence();
 
   const {
     data: overview,
@@ -206,74 +125,28 @@ export default function AdminDashboardScreen() {
     queryKey: ["admin-dashboard-overview"],
     queryFn: getAdminOverview,
   });
+
+  // admin may not have an employee profile — that's fine
   const { data: myDay, refetch: refetchMyDay } = useQuery({
     queryKey: ["admin-my-today"],
     queryFn: getEmployeeOverview,
-    retry: false, // admin may not have an employee profile — that's fine
+    retry: false,
   });
 
-  const { data: trend, refetch: refetchTrend } = useQuery({
-    queryKey: ["admin-dashboard-trend"],
-    queryFn: () => getAdminAttendanceTrend(6),
-  });
   const { data: deptData, refetch: refetchDept } = useQuery({
     queryKey: ["admin-dashboard-dept"],
     queryFn: getAdminDepartmentBreakdown,
   });
+
   const { data: activity, refetch: refetchActivity } = useQuery({
     queryKey: ["admin-dashboard-activity"],
     queryFn: () => getAdminRecentActivity(8),
   });
-  const { data: lateData, refetch: refetchLate } = useQuery({
-    queryKey: ["admin-dashboard-late"],
-    queryFn: () => getAdminLateReport(),
-  });
-
-  // ── Office presence ──────────────────────────────────────────────────────────
-  const { data: officeLocation } = useQuery({
-    queryKey: ["office-location"],
-    queryFn: getOfficeLocation,
-    staleTime: 5 * 60 * 1000,
-  });
-
-  type PresenceStatus = "at_office" | "away" | "no_location" | "checking";
-  const [presence, setPresence] = useState<PresenceStatus>("checking");
-
-  useEffect(() => {
-    if (!officeLocation) {
-      setPresence("no_location");
-      return;
-    }
-    let cancelled = false;
-    (async () => {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== "granted") {
-        if (!cancelled) setPresence("away");
-        return;
-      }
-      const pos = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.Balanced,
-      });
-      if (cancelled) return;
-      const dist = haversineMeters(
-        pos.coords.latitude,
-        pos.coords.longitude,
-        Number(officeLocation.latitude),
-        Number(officeLocation.longitude),
-      );
-      setPresence(dist <= officeLocation.radiusMeters ? "at_office" : "away");
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [officeLocation]);
 
   const handleRefresh = () => {
     refetch();
-    refetchTrend();
     refetchDept();
     refetchActivity();
-    refetchLate();
     refetchMyDay();
   };
 
@@ -298,318 +171,195 @@ export default function AdminDashboardScreen() {
     );
   }
 
-  const greeting = user?.firstName
-    ? `Hi, ${user.firstName} 👋`
-    : "Admin Dashboard";
   const { todayAttendance: ta, employees } = overview;
   const presentPct =
     employees.active > 0
       ? Math.round(((ta.present + ta.late) / employees.active) * 100)
       : 0;
 
+  const canCheckIn =
+    myDay &&
+    !myDay.today.checkedIn &&
+    myDay.today.status !== "sick_leave" &&
+    myDay.today.status !== "casual_leave" &&
+    myDay.today.status !== "holiday";
+  const canCheckOut = myDay && myDay.today.checkedIn && !myDay.today.checkedOut;
+
   return (
     <ScrollView
       style={styles.root}
-      contentContainerStyle={[
-        styles.content,
-        { paddingTop: insets.top, paddingBottom: insets.bottom + 110 },
-      ]}
+      contentContainerStyle={{ paddingBottom: insets.bottom + 110 }}
       showsVerticalScrollIndicator={false}
       refreshControl={
         <RefreshControl refreshing={isRefetching} onRefresh={handleRefresh} />
       }
     >
-      {/* HERO */}
-      <View style={styles.hero}>
-        <View style={styles.heroHeader}>
-          <View>
-            <Text style={styles.heroEyebrow}>ADMIN · ATTENDANCE</Text>
-            <Text style={styles.heroGreeting}>{greeting}</Text>
-          </View>
-          <View style={styles.heroActions}>
-            <TouchableOpacity
-              onPress={() => router.push("/(app)/settings")}
-              style={styles.heroActionButton}
-              hitSlop={8}
-            >
-              <Feather
-                name="settings"
-                size={17}
-                color="rgba(255,255,255,0.9)"
-              />
-            </TouchableOpacity>
-          </View>
-        </View>
+      <DashboardHero
+        paddingTop={insets.top + 14}
+        date={fmtLongDate()}
+        greeting={
+          user?.firstName ? `Hi, ${user.firstName} 👋` : "Admin Dashboard"
+        }
+        statusLabel={`${presentPct}% attendance today`}
+        statusColor={colors.green[400]}
+        presence={presence}
+        onSettings={() => router.push("/(app)/settings")}
+      />
 
-        {/* Attendance rate */}
-        <View style={styles.rateBlock}>
-          <Text style={styles.rateLabel}>Today's attendance rate</Text>
-          <Text style={styles.rateValue}>{presentPct}%</Text>
-          <View style={styles.rateBarTrack}>
-            <View style={[styles.rateBarFill, { width: `${presentPct}%` }]} />
-          </View>
-        </View>
+      <FloatingCard
+        title="Today's overview"
+        pillText={fmtShortDate()}
+        metrics={[
+          {
+            key: "present",
+            icon: "check-circle",
+            iconBg: colors.bytecode[50],
+            iconColor: colors.bytecode[600],
+            label: "Present",
+            value: String(ta.present),
+            sub: `of ${employees.active} active`,
+            emphasize: true,
+          },
+          {
+            key: "late",
+            icon: "clock",
+            iconBg: colors.amber[50],
+            iconColor: colors.amber[600],
+            label: "Late",
+            value: String(ta.late),
+            sub: "Arrived after 10:30",
+            emphasize: true,
+          },
+          {
+            key: "leave",
+            icon: "sun",
+            iconBg: colors.red[50],
+            iconColor: colors.red[500],
+            label: "On leave",
+            value: String(ta.onCasualLeave + ta.onSickLeave),
+            sub: `${ta.onCasualLeave} casual · ${ta.onSickLeave} sick`,
+            emphasize: true,
+          },
+        ]}
+      />
 
-        {/* Today breakdown */}
-        <View style={styles.metricsCard}>
-          {[
-            {
-              label: "Present",
-              value: ta.present,
-              icon: "check-circle" as const,
-              color: "#99F6E4",
-            },
-            {
-              label: "Late",
-              value: ta.late,
-              icon: "clock" as const,
-              color: "#FDE68A",
-            },
-            {
-              label: "Absent",
-              value: ta.absent,
-              icon: "x-circle" as const,
-              color: "#FCA5A5",
-            },
-            {
-              label: "Leave",
-              value: ta.onLeave,
-              icon: "umbrella" as const,
-              color: "#A5F3FC",
-            },
-          ].map((item, i, arr) => (
-            <React.Fragment key={item.label}>
-              <View style={styles.metric}>
-                <View
-                  style={[
-                    styles.metricIcon,
-                    { backgroundColor: `${item.color}22` },
-                  ]}
-                >
-                  <Feather name={item.icon} size={13} color={item.color} />
-                </View>
-                <Text style={styles.metricLabel}>{item.label}</Text>
-                <Text style={[styles.metricValue, { color: item.color }]}>
-                  {item.value}
-                </Text>
-              </View>
-              {i < arr.length - 1 && <View style={styles.metricDivider} />}
-            </React.Fragment>
-          ))}
-        </View>
+      {canCheckIn && (
+        <CheckInCta
+          variant="in"
+          onPress={() => router.push("/(app)/attendance/check-in")}
+        />
+      )}
+      {canCheckOut && (
+        <CheckInCta
+          variant="out"
+          onPress={() => router.push("/(app)/attendance/check-out")}
+        />
+      )}
 
-        <View style={styles.heroFooter}>
-          <View style={styles.monthBadge}>
-            <View style={styles.monthDot} />
-            <Text style={styles.monthText}>
-              {new Date().toLocaleDateString("en-US", {
-                weekday: "long",
-                month: "long",
-                day: "numeric",
-              })}
-            </Text>
-          </View>
-          {presence !== "checking" && presence !== "no_location" && (
-            <View
-              style={[
-                styles.presenceBadge,
-                presence === "at_office"
-                  ? styles.presenceBadgeIn
-                  : styles.presenceBadgeOut,
-              ]}
-            >
-              <View
-                style={[
-                  styles.presenceDot,
-                  {
-                    backgroundColor:
-                      presence === "at_office" ? "#34D399" : "#F87171",
-                  },
-                ]}
-              />
-              <Text style={styles.presenceText}>
-                {presence === "at_office" ? "At office" : "Away"}
-              </Text>
-            </View>
-          )}
-        </View>
-      </View>
-      {/* THIS MONTH STATS */}
       {myDay && (
-        <View style={styles.section}>
-          <SectionHeader title="This month" />
-          <View style={styles.statsGrid}>
-            {[
+        <Section title="This month" pillIcon="calendar" pillText={fmtMonth()}>
+          <StatsGrid
+            items={[
               {
                 label: "Present",
                 value: myDay.thisMonth.present,
-                color: colors.bytecode[500],
-                icon: "check-circle" as const,
+                icon: "users",
+                ...STAT_PALETTE.present,
               },
               {
                 label: "Late",
                 value: myDay.thisMonth.late,
-                color: "#EAB308",
-                icon: "clock" as const,
-              },
-              {
-                label: "Absent",
-                value: myDay.thisMonth.absent,
-                color: colors.red[500],
-                icon: "x-circle" as const,
+                icon: "clock",
+                ...STAT_PALETTE.late,
               },
               {
                 label: "On Leave",
                 value: myDay.thisMonth.onLeave,
-                color: colors.gray[400],
-                icon: "umbrella" as const,
+                icon: "sun",
+                ...STAT_PALETTE.leave,
               },
-            ].map(({ label, value, color, icon }) => (
-              <View
-                key={label}
-                style={[styles.statCard, { borderColor: `${color}25` }]}
-              >
-                <View
-                  style={[styles.statIcon, { backgroundColor: `${color}15` }]}
-                >
-                  <Feather name={icon} size={15} color={color} />
-                </View>
-                <Text style={[styles.statValue, { color }]}>{value}</Text>
-                <Text style={styles.statLabel}>{label}</Text>
-              </View>
-            ))}
-          </View>
-        </View>
-      )}
-      {/* PERSONAL CHECK-IN / OUT */}
-      {myDay &&
-        !myDay.today.checkedIn &&
-        myDay.today.status !== "sick_leave" &&
-        myDay.today.status !== "holiday" && (
-          <View style={styles.section}>
-            <TouchableOpacity
-              style={styles.checkInBtn}
-              onPress={() => router.push("/(app)/attendance/check-in")}
-              activeOpacity={0.85}
-            >
-              <Feather name="map-pin" size={18} color="#fff" />
-              <Text style={styles.checkInBtnLabel}>Check in now</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-      {myDay && myDay.today.checkedIn && !myDay.today.checkedOut && (
-        <View style={styles.section}>
-          <TouchableOpacity
-            style={[styles.checkInBtn, { backgroundColor: colors.red[500] }]}
-            onPress={() => router.push("/(app)/attendance/check-out")}
-            activeOpacity={0.85}
-          >
-            <Feather name="log-out" size={18} color="#fff" />
-            <Text style={styles.checkInBtnLabel}>Check out</Text>
-          </TouchableOpacity>
-        </View>
-      )}
-
-      {/* PERSONAL QUICK ACTIONS */}
-      <View style={styles.section}>
-        <SectionHeader title="Quick actions" />
-        <View style={styles.quickActionsCard}>
-          {[
-            {
-              icon: "file-plus" as const,
-              label: "Apply Leave",
-              path: "/(app)/sick-leave/apply",
-            },
-            {
-              icon: "clock" as const,
-              label: "Timesheet",
-              path: "/(app)/attendance/timesheet",
-            },
-          ].map(({ icon, label, path }) => (
-            <TouchableOpacity
-              key={label}
-              style={styles.quickAction}
-              onPress={() => router.push(path as any)}
-              activeOpacity={0.75}
-            >
-              <View style={styles.quickIcon}>
-                <Feather name={icon} size={19} color={colors.bytecode[600]} />
-              </View>
-              <Text style={styles.quickLabel}>{label}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-      </View>
-
-      {/* ADMIN MENU */}
-      <View style={styles.section}>
-        <SectionHeader
-          title="Admin Menu"
-          onPress={() => router.push("/(app)/admin/menu")}
-        />
-        <View style={styles.quickActionsCard}>
-          {[
-            {
-              icon: "calendar" as const,
-              label: "Attendance",
-              path: "/(app)/admin/attendance",
-            },
-            {
-              icon: "thermometer" as const,
-              label: "Sick Leave",
-              path: "/(app)/admin/sick-leave",
-            },
-            {
-              icon: "bar-chart-2" as const,
-              label: "Reports",
-              path: "/(app)/admin/attendance/reports",
-            },
-          ].map(({ icon, label, path }) => (
-            <TouchableOpacity
-              key={label}
-              style={styles.quickAction}
-              onPress={() => router.push(path as any)}
-              activeOpacity={0.75}
-            >
-              <View style={styles.quickIcon}>
-                <Feather name={icon} size={19} color={colors.bytecode[600]} />
-              </View>
-              <Text style={styles.quickLabel}>{label}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-      </View>
-
-      {/* DEPARTMENT BREAKDOWN */}
-      {deptData && deptData.length > 0 && (
-        <View style={styles.section}>
-          <SectionHeader title="By department · today" />
-          <View style={styles.card}>
-            {deptData.map((item, index) => (
-              <React.Fragment key={item.department}>
-                <DeptRow item={item} />
-                {index < deptData.length - 1 && <View style={styles.divider} />}
-              </React.Fragment>
-            ))}
-          </View>
-        </View>
-      )}
-      {/* RECENT ACTIVITY */}
-      {activity && activity.length > 0 && (
-        <View style={styles.section}>
-          <SectionHeader
-            title="Recent activity"
-            onPress={() => router.push("/(app)/attendance" as any)}
+            ]}
           />
-          <View style={styles.card}>
-            {activity.map((item, index) => (
+        </Section>
+      )}
+
+      <Section title="Quick actions">
+        <QuickActions
+          items={PERSONAL_ACTIONS}
+          onPress={(path) => router.push(path as any)}
+        />
+      </Section>
+
+      <Section
+        title="Admin menu"
+        onSeeAll={() => router.push("/(app)/admin/menu")}
+      >
+        <QuickActions
+          items={ADMIN_ACTIONS}
+          layout="grid"
+          onPress={(path) => router.push(path as any)}
+        />
+      </Section>
+
+      {deptData && deptData.length > 0 && (
+        <Section title="By department" pillIcon="calendar" pillText="Today">
+          <Card>
+            {deptData.map((item, i) => {
+              const pct =
+                item.total > 0
+                  ? Math.round((item.present / item.total) * 100)
+                  : 0;
+              return (
+                <React.Fragment key={item.department}>
+                  <ProgressRow
+                    label={item.department}
+                    pct={pct}
+                    meta={`${item.present}/${item.total} present · ${item.late} late`}
+                    color={
+                      pct >= 80
+                        ? colors.bytecode[500]
+                        : pct >= 50
+                          ? colors.amber[500]
+                          : colors.red[500]
+                    }
+                  />
+                  {i < deptData.length - 1 && <CardDivider />}
+                </React.Fragment>
+              );
+            })}
+          </Card>
+        </Section>
+      )}
+
+      {activity && activity.length > 0 && (
+        <Section
+          title="Recent activity"
+          onSeeAll={() => router.push("/(app)/admin/attendance")}
+        >
+          <Card>
+            {activity.map((item, i) => (
               <React.Fragment key={item.id}>
-                <ActivityRow item={item} />
-                {index < activity.length - 1 && <View style={styles.divider} />}
+                <PersonRow
+                  name={item.employee}
+                  meta={`${deptName(item.department)} · ${fmtClockTime(
+                    item.checkInTime,
+                  )}${item.isManual ? " · Manual" : ""}`}
+                  pillLabel={
+                    ATTENDANCE_STATUS_LABEL[
+                      item.status as keyof typeof ATTENDANCE_STATUS_LABEL
+                    ] ?? item.status.replace(/_/g, " ")
+                  }
+                  pillColor={
+                    ATTENDANCE_STATUS_COLOR[
+                      item.status as keyof typeof ATTENDANCE_STATUS_COLOR
+                    ] ?? colors.gray[400]
+                  }
+                />
+                {i < activity.length - 1 && <CardDivider />}
               </React.Fragment>
             ))}
-          </View>
-        </View>
+          </Card>
+        </Section>
       )}
     </ScrollView>
   );
@@ -617,361 +367,12 @@ export default function AdminDashboardScreen() {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.gray[50] },
-  content: { paddingBottom: 100 },
   center: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: colors.gray[50],
   },
-
-  hero: {
-    backgroundColor: colors.bytecode[700],
-    paddingHorizontal: 20,
-    paddingTop: 18,
-    paddingBottom: 24,
-    gap: 18,
-  },
-  heroHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-  },
-  heroEyebrow: {
-    fontSize: 10,
-    fontWeight: "800",
-    color: "rgba(204,251,241,0.7)",
-    letterSpacing: 1.5,
-  },
-  heroGreeting: {
-    marginTop: 4,
-    fontSize: 23,
-    lineHeight: 29,
-    fontWeight: "800",
-    color: "#FFFFFF",
-  },
-  heroActions: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  heroActionButton: {
-    width: 38,
-    height: 38,
-    borderRadius: 12,
-    backgroundColor: "rgba(255,255,255,0.12)",
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.10)",
-  },
-
-  rateBlock: { gap: 6 },
-  rateLabel: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: "rgba(204,251,241,0.7)",
-  },
-  rateValue: {
-    fontSize: 38,
-    lineHeight: 44,
-    fontWeight: "900",
-    color: "#FFFFFF",
-    letterSpacing: -1,
-  },
-  rateBarTrack: {
-    height: 6,
-    borderRadius: 4,
-    backgroundColor: "rgba(255,255,255,0.15)",
-    overflow: "hidden",
-  },
-  rateBarFill: { height: 6, borderRadius: 4, backgroundColor: "#99F6E4" },
-
-  metricsCard: {
-    flexDirection: "row",
-    borderRadius: 17,
-    overflow: "hidden",
-    backgroundColor: "rgba(0,0,0,0.18)",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.08)",
-  },
-  metric: {
-    flex: 1,
-    paddingVertical: 11,
-    paddingHorizontal: 5,
-    alignItems: "center",
-  },
-  metricIcon: {
-    width: 24,
-    height: 24,
-    borderRadius: 8,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 4,
-  },
-  metricLabel: {
-    fontSize: 10,
-    color: "rgba(204,251,241,0.6)",
-    fontWeight: "600",
-  },
-  metricValue: { fontSize: 13, fontWeight: "800", marginTop: 3 },
-  metricDivider: { width: 1, backgroundColor: "rgba(255,255,255,0.10)" },
-
-  heroFooter: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  monthBadge: { flexDirection: "row", alignItems: "center", gap: 7 },
-  monthDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: "#99F6E4",
-  },
-  monthText: {
-    fontSize: 11,
-    fontWeight: "700",
-    color: "rgba(204,251,241,0.8)",
-  },
-  notMarkedText: {
-    fontSize: 11,
-    fontWeight: "700",
-    color: "rgba(252,165,165,0.9)",
-  },
-  presenceBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 5,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 20,
-  },
-  presenceBadgeIn: { backgroundColor: "rgba(52,211,153,0.15)" },
-  presenceBadgeOut: { backgroundColor: "rgba(248,113,113,0.15)" },
-  presenceDot: { width: 6, height: 6, borderRadius: 3 },
-  presenceText: { fontSize: 11, fontWeight: "700", color: "#fff" },
-
-  section: { marginTop: 22, paddingHorizontal: 16, gap: 10 },
-  sectionHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  sectionTitle: {
-    fontSize: 17,
-    lineHeight: 22,
-    fontWeight: "800",
-    color: colors.gray[900],
-  },
-  sectionActionBtn: { flexDirection: "row", alignItems: "center", gap: 2 },
-  sectionAction: {
-    fontSize: 13,
-    color: colors.bytecode[600],
-    fontWeight: "700",
-  },
-
-  card: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 17,
-    borderWidth: 1,
-    borderColor: colors.gray[100],
-    overflow: "hidden",
-  },
-  divider: {
-    height: 1,
-    backgroundColor: colors.gray[100],
-    marginHorizontal: 14,
-  },
-  viewMoreRow: {
-    minHeight: 45,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 7,
-  },
-  viewMoreText: {
-    fontSize: 12,
-    fontWeight: "700",
-    color: colors.bytecode[600],
-  },
-
-  empRow: { flexDirection: "row", gap: 10 },
-  empCard: {
-    flex: 1,
-    backgroundColor: "#FFFFFF",
-    borderRadius: 16,
-    borderWidth: 1.5,
-    padding: 14,
-    alignItems: "center",
-    gap: 4,
-  },
-  empValue: { fontSize: 26, fontWeight: "900" },
-  empLabel: { fontSize: 11, fontWeight: "600", color: colors.gray[400] },
-
-  quickActionsCard: {
-    flexDirection: "row",
-    backgroundColor: "#FFFFFF",
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: colors.gray[100],
-    paddingVertical: 13,
-    paddingHorizontal: 7,
-  },
-  quickAction: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 6,
-  },
-  quickIcon: {
-    width: 43,
-    height: 43,
-    borderRadius: 14,
-    backgroundColor: colors.bytecode[50],
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  quickLabel: { fontSize: 11, fontWeight: "700", color: colors.gray[700] },
-
-  chartCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: colors.gray[100],
-    overflow: "hidden",
-    paddingTop: 16,
-    paddingBottom: 12,
-  },
-  chartHeader: { paddingHorizontal: 15, gap: 12 },
-  chartTitle: { fontSize: 16, fontWeight: "800", color: colors.gray[900] },
-  chartSubtitle: { fontSize: 11, color: colors.gray[400], marginTop: 2 },
-  chartLegend: { flexDirection: "row", gap: 16 },
-  legendItem: { flexDirection: "row", alignItems: "center", gap: 5 },
-  legendDot: { width: 7, height: 7, borderRadius: 4 },
-  legendText: { fontSize: 10, color: colors.gray[500], fontWeight: "600" },
-  chartScroll: { paddingHorizontal: 15, paddingTop: 14 },
-  chartArea: { width: 400, height: 195, position: "relative" },
-  chartGrid: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    top: 4,
-    height: 150,
-    justifyContent: "space-between",
-  },
-  chartGridLine: {
-    height: 1,
-    backgroundColor: colors.gray[100],
-    width: "100%",
-  },
-  barsContainer: {
-    height: 190,
-    flexDirection: "row",
-    alignItems: "flex-end",
-    justifyContent: "space-around",
-    paddingHorizontal: 5,
-  },
-  chartColumn: {
-    width: 39,
-    height: 190,
-    alignItems: "center",
-    justifyContent: "flex-end",
-  },
-  barGroup: {
-    height: 154,
-    flexDirection: "row",
-    alignItems: "flex-end",
-    gap: 3,
-  },
-  bar: {
-    width: 10,
-    borderTopLeftRadius: 5,
-    borderTopRightRadius: 5,
-    minHeight: 4,
-  },
-  presentBar: { backgroundColor: colors.bytecode[400] },
-  absentBar: { backgroundColor: colors.red[400] },
-  chartMonth: {
-    fontSize: 9,
-    fontWeight: "600",
-    color: colors.gray[400],
-    marginTop: 7,
-  },
-
-  deptRow: { paddingHorizontal: 14, paddingVertical: 12, gap: 6 },
-  deptHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  deptName: {
-    fontSize: 13,
-    fontWeight: "700",
-    color: colors.gray[800],
-    flex: 1,
-  },
-  deptPct: { fontSize: 13, fontWeight: "800", color: colors.gray[900] },
-  deptTrack: {
-    height: 6,
-    borderRadius: 4,
-    backgroundColor: colors.bytecode[50],
-    overflow: "hidden",
-  },
-  deptFill: { height: 6, borderRadius: 4, minWidth: 4 },
-  deptMeta: { fontSize: 10, color: colors.gray[400], fontWeight: "600" },
-
-  activityRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 14,
-    paddingVertical: 13,
-    gap: 11,
-  },
-  activityAvatar: {
-    width: 39,
-    height: 39,
-    borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  activityAvatarText: { fontSize: 13, fontWeight: "900" },
-  activityInfo: { flex: 1 },
-  activityName: { fontSize: 14, fontWeight: "700", color: colors.gray[900] },
-  activityMeta: {
-    fontSize: 11,
-    color: colors.gray[400],
-    marginTop: 2,
-    textTransform: "capitalize",
-  },
-  statusPill: { borderRadius: 8, paddingHorizontal: 9, paddingVertical: 5 },
-  statusPillText: {
-    fontSize: 10,
-    fontWeight: "800",
-    textTransform: "capitalize",
-  },
-
-  lateRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 14,
-    paddingVertical: 13,
-    gap: 11,
-  },
-  lateAvatar: {
-    width: 39,
-    height: 39,
-    borderRadius: 12,
-    backgroundColor: "#FEF3C7",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  lateAvatarText: { fontSize: 13, fontWeight: "900", color: "#D97706" },
-  lateInfo: { flex: 1 },
-  lateName: { fontSize: 14, fontWeight: "700", color: colors.gray[900] },
-  lateMeta: { fontSize: 11, color: colors.gray[400], marginTop: 2 },
-  lateTime: { fontSize: 14, fontWeight: "900", color: "#D97706" },
-
   retryButton: {
     marginTop: 16,
     paddingHorizontal: 24,
@@ -980,90 +381,4 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   retryLabel: { color: "#FFFFFF", fontWeight: "800" },
-  checkInBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 10,
-    borderRadius: 16,
-    height: 56,
-    backgroundColor: colors.bytecode[600],
-  },
-  checkInBtnLabel: { fontSize: 15, fontWeight: "800", color: "#fff" },
-  statsGrid: { flexDirection: "row", gap: 10 },
-  statCard: {
-    flex: 1,
-    backgroundColor: "#fff",
-    borderRadius: 16,
-    borderWidth: 1.5,
-    padding: 13,
-    alignItems: "center",
-    gap: 5,
-  },
-  statIcon: {
-    width: 34,
-    height: 34,
-    borderRadius: 10,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  statValue: { fontSize: 22, fontWeight: "900" },
-  statLabel: {
-    fontSize: 10,
-    fontWeight: "600",
-    color: colors.gray[400],
-    textAlign: "center",
-  },
-
-  myTodayCard: {
-    backgroundColor: colors.bytecode[700],
-    borderRadius: 18,
-    padding: 16,
-    gap: 12,
-  },
-  myTodayBadge: {
-    alignSelf: "flex-start",
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 7,
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-  },
-  myTodayDot: { width: 8, height: 8, borderRadius: 4 },
-  myTodayBadgeText: { fontSize: 12, fontWeight: "800" },
-  checkTimesRow: {
-    flexDirection: "row",
-    borderRadius: 14,
-    overflow: "hidden",
-    backgroundColor: "rgba(0,0,0,0.18)",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.08)",
-  },
-  checkTimeItem: {
-    flex: 1,
-    paddingVertical: 11,
-    paddingHorizontal: 5,
-    alignItems: "center",
-  },
-  checkTimeIcon: {
-    width: 24,
-    height: 24,
-    borderRadius: 8,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 4,
-  },
-  checkTimeLabel: {
-    fontSize: 10,
-    color: "rgba(204,251,241,0.6)",
-    fontWeight: "600",
-  },
-  checkTimeValue: {
-    fontSize: 13,
-    fontWeight: "800",
-    color: "#FFFFFF",
-    marginTop: 3,
-  },
-  checkTimeDivider: { width: 1, backgroundColor: "rgba(255,255,255,0.10)" },
 });

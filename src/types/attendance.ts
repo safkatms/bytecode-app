@@ -1,8 +1,7 @@
 // src/types/attendance.ts
 
 export type AttendanceStatus =
-    | 'present' | 'absent' | 'late' | 'half_day'
-    | 'on_leave' | 'holiday' | 'weekend' | 'sick_leave';
+    | 'present' | 'late' | 'holiday' | 'weekend' | 'sick_leave' | 'casual_leave';
 export type Role = 'admin' | 'user';
 export type RecordStatus = 'active' | 'deleted';
 export interface PaginationMeta {

@@ -16,7 +16,6 @@ import {
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { useRouter } from "expo-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Feather from "@expo/vector-icons/Feather";
 import {
   adminListAttendance,
@@ -31,28 +30,11 @@ import type {
   AttendanceStatus,
   DailySummaryItem,
 } from "@/types/attendance";
-
-const STATUS_COLOR: Record<AttendanceStatus, string> = {
-  present: colors.green[600],
-  absent: colors.red[500],
-  late: colors.orange[500],
-  half_day: colors.amber[500],
-  on_leave: colors.bytecode[500],
-  holiday: colors.bytecode[700],
-  sick_leave: colors.red[400],
-  weekend: colors.gray[400],
-};
-const STATUS_LABEL: Record<AttendanceStatus, string> = {
-  present: "Present",
-  absent: "Absent",
-  late: "Late",
-  half_day: "Half Day",
-  on_leave: "On Leave",
-  holiday: "Holiday",
-  sick_leave: "Sick Leave",
-  weekend: "Weekend",
-};
-const ALL_STATUSES = Object.keys(STATUS_LABEL) as AttendanceStatus[];
+import {
+  ATTENDANCE_STATUS_COLOR as STATUS_COLOR,
+  ATTENDANCE_STATUS_LABEL as STATUS_LABEL,
+  ALL_ATTENDANCE_STATUSES as ALL_STATUSES,
+} from "@/lib/attendance-status";
 
 function todayStr() {
   const d = new Date();
@@ -80,20 +62,19 @@ function fmtDate(iso: string) {
 }
 
 function DailySummaryBar({ items }: { items: DailySummaryItem[] }) {
-  const total = items.reduce((s, i) => s + i._count.id, 0) || 1;
   const order: AttendanceStatus[] = [
     "present",
     "late",
-    "absent",
-    "on_leave",
-    "half_day",
+    "holiday",
+    "weekend",
+    "sick_leave",
+    "casual_leave",
   ];
   return (
     <View style={s.summaryBar}>
       {order.map((status) => {
         const item = items.find((i) => i.status === status);
         if (!item) return null;
-        const pct = Math.round((item._count.id / total) * 100);
         return (
           <View key={status} style={s.summaryCell}>
             <Text style={[s.summaryVal, { color: STATUS_COLOR[status] }]}>
@@ -169,20 +150,21 @@ function RecordRow({
           )}
         </View>
       </View>
-      <View style={s.rowActions}>
-        <TouchableOpacity onPress={onEdit} hitSlop={8} style={s.editBtn}>
-          <Feather name="edit-2" size={15} color={colors.bytecode[500]} />
-        </TouchableOpacity>
-        <TouchableOpacity onPress={onDelete} hitSlop={8} style={s.deleteBtn}>
-          <Feather name="trash-2" size={15} color={colors.red[400]} />
-        </TouchableOpacity>
-      </View>
+      {!["casual_leave", "sick_leave", "holiday"].includes(item.status) && (
+        <View style={s.rowActions}>
+          <TouchableOpacity onPress={onEdit} hitSlop={8} style={s.editBtn}>
+            <Feather name="edit-2" size={15} color={colors.bytecode[500]} />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={onDelete} hitSlop={8} style={s.deleteBtn}>
+            <Feather name="trash-2" size={15} color={colors.red[400]} />
+          </TouchableOpacity>
+        </View>
+      )}
     </TouchableOpacity>
   );
 }
 
 export default function AdminAttendanceScreen() {
-  const insets = useSafeAreaInsets();
   const router = useRouter();
   const qc = useQueryClient();
   const [page, setPage] = useState(1);
@@ -263,10 +245,11 @@ export default function AdminAttendanceScreen() {
   });
 
   return (
-    <View style={[s.root, { paddingTop: insets.top }]}>
+    <View style={s.root}>
       <PageHeader
         title="Attendance"
         variant="bytecode"
+        insetTop
         rightActions={[
           {
             icon: "plus",

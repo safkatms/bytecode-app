@@ -13,7 +13,6 @@ import {
 } from "react-native";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Feather from "@expo/vector-icons/Feather";
 import {
   adminListSickLeaveRequests,
@@ -115,7 +114,6 @@ function PolicyCard({ year }: { year: number }) {
 // ─── Main Screen ──────────────────────────────────────────────
 
 export default function AdminSickLeaveScreen() {
-  const insets = useSafeAreaInsets();
   const router = useRouter();
   const qc = useQueryClient();
   const [status, setStatus] = useState<SickLeaveStatus | undefined>("pending");
@@ -160,10 +158,11 @@ export default function AdminSickLeaveScreen() {
   const meta = listQ.data?.meta;
 
   return (
-    <View style={[s.root, { paddingTop: insets.top }]}>
+    <View style={s.root}>
       <PageHeader
         title="Sick Leave"
         variant="bytecode"
+        insetTop
         rightActions={[
           {
             icon: "plus",
@@ -219,7 +218,7 @@ export default function AdminSickLeaveScreen() {
           ItemSeparatorComponent={() => <View style={{ height: 8 }} />}
           ListEmptyComponent={
             <View style={s.empty}>
-              <Feather name="inbox" size={36} color={colors.gray[300]} />
+              <Feather name="thermometer" size={36} color={colors.gray[300]} />
               <Text style={s.emptyText}>No requests</Text>
             </View>
           }
