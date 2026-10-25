@@ -1,7 +1,37 @@
 import React from "react";
-import { View, Text, StyleSheet } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import Feather from "@expo/vector-icons/Feather";
 import { colors } from "@/components/ui/theme";
+
+/** Tappable list row: icon tile, label + description, trailing chevron. */
+export function LinkRow({
+  icon,
+  iconBg = colors.bytecode[50],
+  iconColor = colors.bytecode[600],
+  label,
+  sub,
+  onPress,
+}: {
+  icon: React.ComponentProps<typeof Feather>["name"];
+  iconBg?: string;
+  iconColor?: string;
+  label: string;
+  sub?: string;
+  onPress: () => void;
+}) {
+  return (
+    <TouchableOpacity style={s.linkRow} onPress={onPress} activeOpacity={0.75}>
+      <View style={[s.linkIcon, { backgroundColor: iconBg }]}>
+        <Feather name={icon} size={19} color={iconColor} />
+      </View>
+      <View style={{ flex: 1 }}>
+        <Text style={s.linkLabel}>{label}</Text>
+        {sub && <Text style={s.linkSub}>{sub}</Text>}
+      </View>
+      <Feather name="chevron-right" size={17} color={colors.gray[300]} />
+    </TouchableOpacity>
+  );
+}
 
 /** Standalone card with an icon tile, a title/meta block and a trailing badge. */
 export function InfoCard({
@@ -126,6 +156,23 @@ export function ProgressRow({
 }
 
 const s = StyleSheet.create({
+  linkRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 13,
+    paddingHorizontal: 15,
+    paddingVertical: 15,
+  },
+  linkIcon: {
+    width: 46,
+    height: 46,
+    borderRadius: 15,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  linkLabel: { fontSize: 14, fontWeight: "800", color: colors.gray[900] },
+  linkSub: { fontSize: 12, color: colors.gray[400], marginTop: 2 },
+
   infoCard: {
     flexDirection: "row",
     alignItems: "center",

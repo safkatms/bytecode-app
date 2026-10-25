@@ -9,5 +9,5 @@ export { StatsGrid, STAT_PALETTE } from "./StatsGrid";
 export type { StatItem } from "./StatsGrid";
 export { QuickActions } from "./QuickActions";
 export type { QuickAction } from "./QuickActions";
-export { InfoCard, PersonRow, ProgressRow } from "./rows";
+export { InfoCard, PersonRow, ProgressRow, LinkRow } from "./rows";
 export { fmtClockTime, fmtWorkHours, fmtLongDate, fmtShortDate, fmtMonth } from "./format";

@@ -3,9 +3,7 @@ import {
   View,
   Text,
   StyleSheet,
-  TouchableOpacity,
   ScrollView,
-  ActivityIndicator,
   RefreshControl,
 } from "react-native";
 import { useRouter } from "expo-router";
@@ -15,29 +13,32 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Feather from "@expo/vector-icons/Feather";
 import { getTodayStatus } from "@/lib/api/attendance-employee.api";
 import { PageHeader } from "@/components/ui/PageHeader";
+import { Spinner } from "@/components/ui/Spinner";
 import { colors } from "@/components/ui/theme";
-
 import {
   ATTENDANCE_STATUS_COLOR as STATUS_COLOR,
   ATTENDANCE_STATUS_LABEL as STATUS_LABEL,
 } from "@/lib/attendance-status";
+import {
+  FloatingCard,
+  CheckInCta,
+  Section,
+  Card,
+  CardDivider,
+  LinkRow,
+  fmtClockTime,
+  fmtWorkHours,
+  fmtLongDate,
+} from "@/components/dashboard";
 
-function fmtTime(iso: string | null) {
-  if (!iso) return "—";
-  return new Date(iso).toLocaleTimeString("en-US", {
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: true,
-  });
-}
-
-function fmtHours(h: number) {
-  const hrs = Math.floor(h);
-  const mins = Math.round((h - hrs) * 60);
-  if (hrs === 0) return `${mins}m`;
-  if (mins === 0) return `${hrs}h`;
-  return `${hrs}h ${mins}m`;
-}
+const RECORD_LINKS = [
+  {
+    icon: "calendar" as const,
+    label: "Weekly Timesheet",
+    sub: "Mon–Sun breakdown",
+    path: "/(app)/attendance/timesheet",
+  },
+];
 
 export default function AttendanceIndexScreen() {
   const router = useRouter();
@@ -62,28 +63,32 @@ export default function AttendanceIndexScreen() {
 
   const statusColor = today?.status
     ? (STATUS_COLOR[today.status] ?? colors.gray[400])
-    : colors.gray[300];
+    : colors.gray[400];
   const statusLabel = today?.status
     ? (STATUS_LABEL[today.status] ?? today.status)
-    : "No record";
+    : today?.checkedIn
+      ? "Checked in"
+      : "Not checked in";
 
-  const canCheckIn =
-    !isLoading &&
-    !today?.checkedIn &&
-    !today?.status?.includes("sick_leave") &&
-    !today?.status?.includes("casual_leave") &&
-    !today?.status?.includes("holiday");
-  const canCheckOut = !isLoading && today?.checkedIn && !today?.checkedOut;
+  const onLeave =
+    today?.status === "sick_leave" ||
+    today?.status === "casual_leave" ||
+    today?.status === "holiday";
+  const canCheckIn = !isLoading && !today?.checkedIn && !onLeave;
+  const canCheckOut = !isLoading && !!today?.checkedIn && !today?.checkedOut;
+  const lateMinutes = today?.lateMinutes ?? 0;
 
   return (
     <View style={s.root}>
-      <PageHeader title="Attendance" variant="bytecode" insetTop />
+      <PageHeader
+        title="Attendance"
+        subtitle={fmtLongDate()}
+        variant="bytecode"
+        insetTop
+      />
 
       <ScrollView
-        contentContainerStyle={[
-          s.content,
-          { paddingBottom: insets.bottom + 32 },
-        ]}
+        contentContainerStyle={{ paddingBottom: insets.bottom + 110 }}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
@@ -93,140 +98,119 @@ export default function AttendanceIndexScreen() {
           />
         }
       >
-        {/* Today card */}
-        <View style={s.todayCard}>
-          <View style={s.todayHeader}>
-            <View>
-              <Text style={s.todayLabel}>Today</Text>
-              <Text style={s.todayDate}>
-                {new Date().toLocaleDateString("en-US", {
-                  weekday: "long",
-                  month: "long",
-                  day: "numeric",
-                })}
-              </Text>
+        {isLoading ? (
+          <View style={s.center}>
+            <Spinner />
+          </View>
+        ) : (
+          <>
+            <View style={s.todayWrap}>
+            <FloatingCard
+              float={false}
+              title="Today"
+              pillIcon={null}
+              pillText={statusLabel}
+              pillColor={statusColor}
+              pillBg={`${statusColor}18`}
+              metrics={[
+                {
+                  key: "in",
+                  icon: "log-in",
+                  iconBg: colors.green[100],
+                  iconColor: colors.green[600],
+                  label: "Check-in",
+                  value: fmtClockTime(today?.checkInTime ?? null),
+                  sub: today?.checkInTime ? "Checked in" : "Not checked in",
+                },
+                {
+                  key: "out",
+                  icon: "log-out",
+                  iconBg: colors.red[100],
+                  iconColor: colors.red[600],
+                  label: "Check-out",
+                  value: fmtClockTime(today?.checkOutTime ?? null),
+                  sub: today?.checkOutTime ? "Checked out" : "Not checked out",
+                },
+                {
+                  key: "hours",
+                  icon: "clock",
+                  iconBg: colors.bytecode[50],
+                  iconColor: colors.bytecode[600],
+                  label: "Working hours",
+                  value: fmtWorkHours(
+                    today?.workHours != null ? Number(today.workHours) : null,
+                  ),
+                  sub: "Total for today",
+                  emphasize: true,
+                },
+              ]}
+            />
             </View>
-            {isLoading ? (
-              <ActivityIndicator color={colors.bytecode[500]} />
-            ) : (
-              <View
-                style={[s.statusPill, { backgroundColor: `${statusColor}18` }]}
-              >
-                <Text style={[s.statusText, { color: statusColor }]}>
-                  {statusLabel}
+
+            {lateMinutes > 0 && (
+              <View style={s.lateBadge}>
+                <Feather
+                  name="alert-circle"
+                  size={14}
+                  color={colors.amber[600]}
+                />
+                <Text style={s.lateText}>
+                  You were {lateMinutes} min late today
                 </Text>
               </View>
             )}
-          </View>
 
-          {!isLoading && today && (
-            <View style={s.timesRow}>
-              <View style={s.timeBox}>
-                <Feather name="log-in" size={14} color={colors.bytecode[500]} />
-                <Text style={s.timeBoxLabel}>Check-in</Text>
-                <Text style={s.timeBoxValue}>{fmtTime(today.checkInTime)}</Text>
-              </View>
-              <View style={s.timeDivider} />
-              <View style={s.timeBox}>
-                <Feather name="log-out" size={14} color={colors.red[400]} />
-                <Text style={s.timeBoxLabel}>Check-out</Text>
-                <Text style={s.timeBoxValue}>
-                  {fmtTime(today.checkOutTime)}
-                </Text>
-              </View>
-              <View style={s.timeDivider} />
-              <View style={s.timeBox}>
-                <Feather name="clock" size={14} color={colors.gray[400]} />
-                <Text style={s.timeBoxLabel}>Hours</Text>
-                <Text style={s.timeBoxValue}>
-                  {today.workHours != null
-                    ? fmtHours(Number(today.workHours))
-                    : "—"}
-                </Text>
-              </View>
-            </View>
-          )}
-
-          {/* Action buttons */}
-          <View style={s.actionRow}>
-            <TouchableOpacity
-              style={[
-                s.actionBtn,
-                s.actionBtnbytecode,
-                !canCheckIn && s.actionBtnOff,
-              ]}
-              onPress={() => router.push("/(app)/attendance/check-in")}
-              disabled={!canCheckIn}
-              activeOpacity={0.85}
-            >
-              <Feather name="log-in" size={18} color="#fff" />
-              <Text style={s.actionBtnText}>Check In</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[
-                s.actionBtn,
-                s.actionBtnRed,
-                !canCheckOut && s.actionBtnOff,
-              ]}
-              onPress={() => router.push("/(app)/attendance/check-out")}
-              disabled={!canCheckOut}
-              activeOpacity={0.85}
-            >
-              <Feather name="log-out" size={18} color="#fff" />
-              <Text style={s.actionBtnText}>Check Out</Text>
-            </TouchableOpacity>
-          </View>
-
-          {!isLoading && (today?.lateMinutes ?? 0) > 0 && (
-            <View style={s.lateBadge}>
-              <Feather name="alert-circle" size={12} color="#D97706" />
-              <Text style={s.lateText}>
-                {today?.lateMinutes} min late today
-              </Text>
-            </View>
-          )}
-        </View>
-
-        {/* Quick links */}
-        <Text style={s.sectionTitle}>My Records</Text>
-        <View style={s.linksCard}>
-          {[
-            {
-              icon: "calendar" as const,
-              label: "Weekly Timesheet",
-              sub: "Mon–Sun breakdown",
-              href: "/(app)/attendance/timesheet",
-            },
-            // {
-            //   icon: "list" as const,
-            //   label: "Attendance History",
-            //   sub: "Full record with filters",
-            //   href: "/(app)/attendance/history",
-            // },
-          ].map(({ icon, label, sub, href }, i, arr) => (
-            <React.Fragment key={href}>
-              <TouchableOpacity
-                style={s.linkRow}
-                onPress={() => router.push(href as any)}
-                activeOpacity={0.8}
-              >
-                <View style={s.linkIcon}>
-                  <Feather name={icon} size={18} color={colors.bytecode[600]} />
+            {canCheckIn && (
+              <CheckInCta
+                variant="in"
+                onPress={() => router.push("/(app)/attendance/check-in")}
+              />
+            )}
+            {canCheckOut && (
+              <CheckInCta
+                variant="out"
+                onPress={() => router.push("/(app)/attendance/check-out")}
+              />
+            )}
+            {!canCheckIn && !canCheckOut && (
+              <View style={s.restPanel}>
+                <View style={s.restIcon}>
+                  <Feather
+                    name={onLeave ? "sun" : "check-circle"}
+                    size={20}
+                    color={onLeave ? statusColor : colors.green[600]}
+                  />
                 </View>
-                <View style={s.linkText}>
-                  <Text style={s.linkLabel}>{label}</Text>
-                  <Text style={s.linkSub}>{sub}</Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={s.restTitle}>
+                    {onLeave ? statusLabel : "All done for today"}
+                  </Text>
+                  <Text style={s.restSub}>
+                    {onLeave
+                      ? "No check-in needed today."
+                      : "You've checked in and out."}
+                  </Text>
                 </View>
-                <Feather
-                  name="chevron-right"
-                  size={16}
-                  color={colors.gray[300]}
+              </View>
+            )}
+          </>
+        )}
+
+        <Section title="My records">
+          <Card>
+            {RECORD_LINKS.map(({ icon, label, sub, path }, i, arr) => (
+              <React.Fragment key={path}>
+                <LinkRow
+                  icon={icon}
+                  label={label}
+                  sub={sub}
+                  onPress={() => router.push(path as any)}
                 />
-              </TouchableOpacity>
-              {i < arr.length - 1 && <View style={s.linkDivider} />}
-            </React.Fragment>
-          ))}
-        </View>
+                {i < arr.length - 1 && <CardDivider />}
+              </React.Fragment>
+            ))}
+          </Card>
+        </Section>
       </ScrollView>
     </View>
   );
@@ -234,107 +218,43 @@ export default function AttendanceIndexScreen() {
 
 const s = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.gray[50] },
-  content: { padding: 16, gap: 16 },
-
-  todayCard: {
-    backgroundColor: "#fff",
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: colors.gray[100],
-    padding: 18,
-    gap: 14,
-  },
-  todayHeader: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    justifyContent: "space-between",
-  },
-  todayLabel: {
-    fontSize: 11,
-    fontWeight: "700",
-    color: colors.gray[400],
-    letterSpacing: 0.5,
-  },
-  todayDate: {
-    fontSize: 16,
-    fontWeight: "800",
-    color: colors.gray[900],
-    marginTop: 2,
-  },
-  statusPill: {
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 5,
-  },
-  statusText: { fontSize: 12, fontWeight: "700" },
-
-  timesRow: {
-    flexDirection: "row",
-    backgroundColor: colors.gray[50],
-    borderRadius: 14,
-    padding: 14,
-  },
-  timeBox: { flex: 1, alignItems: "center", gap: 4 },
-  timeBoxLabel: { fontSize: 10, fontWeight: "600", color: colors.gray[400] },
-  timeBoxValue: { fontSize: 14, fontWeight: "800", color: colors.gray[900] },
-  timeDivider: { width: 1, backgroundColor: colors.gray[200] },
-
-  actionRow: { flexDirection: "row", gap: 10 },
-  actionBtn: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    borderRadius: 14,
-    height: 50,
-  },
-  actionBtnbytecode: { backgroundColor: colors.bytecode[600] },
-  actionBtnRed: { backgroundColor: colors.red[500] },
-  actionBtnOff: { opacity: 0.35 },
-  actionBtnText: { fontSize: 14, fontWeight: "800", color: "#fff" },
+  center: { paddingTop: 48, alignItems: "center" },
+  todayWrap: { paddingHorizontal: 16, paddingTop: 16 },
 
   lateBadge: {
+    marginHorizontal: 16,
+    marginTop: 12,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: 6,
-    backgroundColor: "#FEF3C7",
-    borderRadius: 10,
-    paddingVertical: 7,
+    gap: 7,
+    backgroundColor: colors.amber[50],
+    borderRadius: 14,
+    paddingVertical: 11,
   },
-  lateText: { fontSize: 12, fontWeight: "700", color: "#D97706" },
+  lateText: { fontSize: 12.5, fontWeight: "700", color: colors.amber[700] },
 
-  sectionTitle: {
-    fontSize: 12,
-    fontWeight: "700",
-    color: colors.gray[500],
-    letterSpacing: 0.5,
-    marginBottom: -8,
-  },
-  linksCard: {
+  restPanel: {
+    marginHorizontal: 16,
+    marginTop: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 13,
     backgroundColor: "#fff",
     borderRadius: 18,
     borderWidth: 1,
     borderColor: colors.gray[100],
-    overflow: "hidden",
+    paddingHorizontal: 15,
+    paddingVertical: 15,
   },
-  linkRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: 16,
-    gap: 14,
-  },
-  linkIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    backgroundColor: colors.bytecode[50],
+  restIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 15,
+    backgroundColor: colors.gray[50],
     alignItems: "center",
     justifyContent: "center",
   },
-  linkText: { flex: 1 },
-  linkLabel: { fontSize: 14, fontWeight: "700", color: colors.gray[900] },
-  linkSub: { fontSize: 11, color: colors.gray[400], marginTop: 1 },
-  linkDivider: { height: 1, backgroundColor: colors.gray[50], marginLeft: 70 },
+  restTitle: { fontSize: 14, fontWeight: "800", color: colors.gray[900] },
+  restSub: { fontSize: 12, color: colors.gray[400], marginTop: 2 },
 });

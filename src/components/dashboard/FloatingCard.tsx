@@ -14,26 +14,37 @@ export type FloatingMetric = {
   emphasize?: boolean;
 };
 
-/** White card that floats over the hero, with evenly divided metric columns. */
+/**
+ * White card with evenly divided metric columns. Floats up over the hero by
+ * default; pass `float={false}` to use it as a normal in-flow card.
+ */
 export function FloatingCard({
   title,
   pillIcon = "calendar",
   pillText,
+  pillColor = colors.bytecode[700],
+  pillBg = colors.bytecode[50],
+  float = true,
   metrics,
 }: {
   title: string;
-  pillIcon?: React.ComponentProps<typeof Feather>["name"];
+  pillIcon?: React.ComponentProps<typeof Feather>["name"] | null;
   pillText?: string;
+  pillColor?: string;
+  pillBg?: string;
+  float?: boolean;
   metrics: FloatingMetric[];
 }) {
   return (
-    <View style={s.card}>
+    <View style={[s.card, !float && s.cardFlat]}>
       <View style={s.header}>
         <Text style={s.title}>{title}</Text>
         {pillText && (
-          <View style={s.pill}>
-            <Feather name={pillIcon} size={13} color={colors.bytecode[600]} />
-            <Text style={s.pillText}>{pillText}</Text>
+          <View style={[s.pill, { backgroundColor: pillBg }]}>
+            {pillIcon && (
+              <Feather name={pillIcon} size={13} color={pillColor} />
+            )}
+            <Text style={[s.pillText, { color: pillColor }]}>{pillText}</Text>
           </View>
         )}
       </View>
@@ -72,6 +83,14 @@ const s = StyleSheet.create({
     shadowRadius: 18,
     elevation: 7,
   },
+  cardFlat: {
+    marginHorizontal: 0,
+    marginTop: 0,
+    shadowOpacity: 0,
+    elevation: 0,
+    borderWidth: 1,
+    borderColor: colors.gray[100],
+  },
   header: {
     flexDirection: "row",
     alignItems: "center",
@@ -83,12 +102,11 @@ const s = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    backgroundColor: colors.bytecode[50],
     borderRadius: 20,
     paddingHorizontal: 12,
     paddingVertical: 7,
   },
-  pillText: { fontSize: 12, fontWeight: "700", color: colors.bytecode[700] },
+  pillText: { fontSize: 12, fontWeight: "700" },
   body: { flexDirection: "row", alignItems: "flex-start" },
   item: { flex: 1, alignItems: "center", gap: 6, paddingHorizontal: 4 },
   icon: {
