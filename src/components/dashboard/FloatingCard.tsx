@@ -29,7 +29,7 @@ export function FloatingCard({
   valueFirst = false,
   metrics,
 }: {
-  title: string;
+  title?: string;
   pillIcon?: React.ComponentProps<typeof Feather>["name"] | null;
   pillText?: string;
   pillColor?: string;
@@ -41,15 +41,17 @@ export function FloatingCard({
 }) {
   return (
     <View style={[s.card, !float && s.cardFlat]}>
-      <View style={s.header}>
-        <Text style={s.title}>{title}</Text>
-        {pillText && (
-          <View style={[s.pill]}>
-            {pillIcon && <Feather name={pillIcon} size={13} />}
-            <Text style={[s.pillText]}>{pillText}</Text>
-          </View>
-        )}
-      </View>
+      {title && (
+        <View style={s.header}>
+          <Text style={s.title}>{title}</Text>
+          {pillText && (
+            <View style={[s.pill]}>
+              {pillIcon && <Feather name={pillIcon} size={13} />}
+              <Text style={[s.pillText]}>{pillText}</Text>
+            </View>
+          )}
+        </View>
+      )}
 
       <View style={s.body}>
         {metrics.map((m, i) => (

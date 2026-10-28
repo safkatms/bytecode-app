@@ -30,6 +30,8 @@ export interface User {
     role: Role;
     isActive: boolean;
     mustChangePassword: boolean;
+    /** admin may view the app as another user */
+    canSwitchUser: boolean;
     timezone: string;
     locale: string;
     currency: string;

@@ -47,22 +47,6 @@ import {
 
 const PERSONAL_ACTIONS = [
   {
-    icon: "thermometer" as const,
-    label: "Sick Leave",
-    sub: "Apply for sick leave",
-    bg: colors.bytecode[50],
-    color: colors.bytecode[600],
-    path: "/(app)/leave/apply-sick",
-  },
-  {
-    icon: "umbrella" as const,
-    label: "Casual Leave",
-    sub: "Apply for casual leave",
-    bg: colors.green[100],
-    color: colors.green[600],
-    path: "/(app)/leave/apply-casual",
-  },
-  {
     icon: "clock" as const,
     label: "Timesheet",
     sub: "View your timesheet",
@@ -70,24 +54,44 @@ const PERSONAL_ACTIONS = [
     color: colors.bytecode[600],
     path: "/(app)/attendance/timesheet",
   },
+  {
+    icon: "thermometer" as const,
+    label: "Sick Leave",
+    sub: "Apply for sick leave",
+    bg: colors.pink[50],
+    color: colors.pink[600],
+    path: "/(app)/leave/apply-sick",
+  },
+  {
+    icon: "umbrella" as const,
+    label: "Casual Leave",
+    sub: "Apply for casual leave",
+    bg: colors.red[50],
+    color: colors.red[600],
+    path: "/(app)/leave/apply-casual",
+  },
 ];
 
 const ADMIN_ACTIONS = [
   {
     icon: "calendar" as const,
     label: "Attendance",
+    bg: colors.bytecode[50],
+    color: colors.bytecode[600],
     path: "/(app)/admin/attendance",
   },
   {
     icon: "thermometer" as const,
     label: "Sick Leave",
+    bg: colors.pink[50],
+    color: colors.pink[600],
     path: "/(app)/admin/sick-leave",
   },
   {
     icon: "umbrella" as const,
     label: "Casual Leave",
-    bg: colors.green[100],
-    color: colors.green[600],
+    bg: colors.red[50],
+    color: colors.red[600],
     path: "/(app)/admin/casual-leave",
   },
   {
@@ -100,6 +104,8 @@ const ADMIN_ACTIONS = [
   {
     icon: "bar-chart-2" as const,
     label: "Reports",
+    bg: colors.bytecode[50],
+    color: colors.bytecode[600],
     path: "/(app)/admin/attendance/reports",
   },
 ];

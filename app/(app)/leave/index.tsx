@@ -30,7 +30,12 @@ export default function LeaveScreen() {
               onPress={() => setTab(kind)}
               activeOpacity={0.8}
             >
+              {/* `collapsable={false}` stops Android flattening the idle (transparent)
+                  tile away; the key rebuilds it on each switch so the radius is
+                  never lost when its fill changes. */}
               <View
+                key={active ? "on" : "off"}
+                collapsable={false}
                 style={[
                   s.tabIcon,
                   { backgroundColor: active ? cfg.tint : "transparent" },

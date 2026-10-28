@@ -66,6 +66,17 @@ export async function adminReviewCasualLeave(id: number, payload: {
     return res.data.data!;
 }
 
+export async function adminBackfillEarnedLeave(year: number): Promise<{
+    year: number;
+    scanned: number;
+    earnedDaysOnRecord: number;
+}> {
+    const res = await api.post<ApiResponse<{ year: number; scanned: number; earnedDaysOnRecord: number }>>(
+        '/admin/casual-leave/earned/backfill', { year },
+    );
+    return res.data.data!;
+}
+
 export async function adminMarkCasualLeave(payload: {
     employeeId: number;
     date: string;

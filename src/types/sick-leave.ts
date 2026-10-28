@@ -16,6 +16,16 @@ export interface SickLeaveBalance {
     remainingDays: number | null;
 }
 
+// Item of GET /admin/sick-leave/balances: a balance plus who it belongs to.
+export interface SickLeaveEmployeeBalance extends SickLeaveBalance {
+    employee: {
+        id: number;
+        employeeCode: string;
+        designation?: string | null;
+        user?: { id: number; firstName: string | null; lastName: string | null; email: string };
+    };
+}
+
 export interface SickLeaveRequest {
     id: number;
     employeeId: number;

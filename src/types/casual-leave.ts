@@ -14,9 +14,21 @@ export interface CasualLeaveBalance {
     year: number;
     allocatedDays: number | null;
     carryForwardDays: number;
+    // Earned by working a weekend / holiday-excluded day
+    earnedDays: number;
     totalDays: number | null;
     usedDays: number;
     remainingDays: number | null;
+}
+
+// Item of GET /admin/casual-leave/balances: a balance plus who it belongs to.
+export interface CasualLeaveEmployeeBalance extends CasualLeaveBalance {
+    employee: {
+        id: number;
+        employeeCode: string;
+        designation?: string | null;
+        user?: { id: number; firstName: string | null; lastName: string | null; email: string };
+    };
 }
 
 export interface CasualLeaveRequest {

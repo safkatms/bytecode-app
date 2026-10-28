@@ -3,9 +3,10 @@
 import React, { useState } from "react";
 import {
   View, Text, FlatList, TouchableOpacity, StyleSheet, RefreshControl,
+  Modal, TextInput, Alert,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import Feather from "@expo/vector-icons/Feather";
 
 import {
@@ -14,7 +15,10 @@ import {
 import {
   adminListCasualLeaveRequests,
 } from "@/lib/api/casual-leave.api";
-import { adminGetSickLeaveBalance, adminGetCasualLeaveBalance } from "@/lib/api/leave-balance.api";
+import {
+  adminGetSickLeaveBalance, adminGetCasualLeaveBalance,
+  adminAdjustSickLeaveBalance, adminAdjustCasualLeaveBalance,
+} from "@/lib/api/leave-balance.api";
 import { colors } from "@/components/ui/theme";
 import { Spinner } from "@/components/ui/Spinner";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -46,7 +50,61 @@ function SickTab({ employeeId, year, onMark }: { employeeId: number; year: numbe
   const b = balanceQ.data;
   const meta = listQ.data?.meta;
 
+  const queryClient = useQueryClient();
+  const [adjustOpen, setAdjustOpen] = useState(false);
+  const [usedInput, setUsedInput] = useState("");
+
+  const adjustM = useMutation({
+    mutationFn: (usedDays: number) => adminAdjustSickLeaveBalance(employeeId, { year, usedDays }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-emp-sick-balance", employeeId] });
+      setAdjustOpen(false);
+    },
+    onError: (e: any) => Alert.alert("Error", e?.response?.data?.message ?? "Failed to update balance"),
+  });
+
+  function openAdjust() {
+    setUsedInput(b ? String(b.usedDays) : "");
+    setAdjustOpen(true);
+  }
+
+  function submitAdjust() {
+    const n = Number(usedInput);
+    if (usedInput.trim() === "" || !Number.isInteger(n) || n < 0) {
+      Alert.alert("Invalid value", "Used days must be a whole number, 0 or more.");
+      return;
+    }
+    adjustM.mutate(n);
+  }
+
   return (
+    <>
+    <Modal visible={adjustOpen} transparent animationType="fade" onRequestClose={() => setAdjustOpen(false)}>
+      <View style={s.modalBackdrop}>
+        <View style={s.modalCard}>
+          <Text style={s.modalTitle}>Adjust Sick Leave — {year}</Text>
+          <Text style={s.modalHint}>Sets the already-used days (overwrites current value).</Text>
+
+          <Text style={s.inputLabel}>Used days</Text>
+          <TextInput
+            style={s.input}
+            value={usedInput}
+            onChangeText={setUsedInput}
+            keyboardType="number-pad"
+            placeholder="e.g. 3"
+          />
+
+          <View style={s.modalActions}>
+            <TouchableOpacity style={s.cancelBtn} onPress={() => setAdjustOpen(false)} disabled={adjustM.isPending}>
+              <Text style={s.cancelBtnText}>Cancel</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={s.saveBtn} onPress={submitAdjust} disabled={adjustM.isPending} activeOpacity={0.8}>
+              <Text style={s.saveBtnText}>{adjustM.isPending ? "Saving…" : "Save"}</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </Modal>
     <FlatList
       data={listQ.data?.data ?? []}
       keyExtractor={(i) => String(i.id)}
@@ -84,6 +142,11 @@ function SickTab({ employeeId, year, onMark }: { employeeId: number; year: numbe
           <TouchableOpacity style={s.markBtn} onPress={onMark} activeOpacity={0.8}>
             <Feather name="plus" size={15} color="#fff" />
             <Text style={s.markBtnText}>Mark Sick Leave</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={s.adjustBtn} onPress={openAdjust} activeOpacity={0.8}>
+            <Feather name="edit-2" size={14} color={colors.bytecode[600]} />
+            <Text style={s.adjustBtnText}>Adjust Balance</Text>
           </TouchableOpacity>
 
           <View style={s.filters}>
@@ -139,6 +202,7 @@ function SickTab({ employeeId, year, onMark }: { employeeId: number; year: numbe
         ) : null
       }
     />
+    </>
   );
 }
 
@@ -162,7 +226,81 @@ function CasualTab({ employeeId, year, onMark }: { employeeId: number; year: num
   const b = balanceQ.data;
   const meta = listQ.data?.meta;
 
+  const queryClient = useQueryClient();
+  const [adjustOpen, setAdjustOpen] = useState(false);
+  const [usedInput, setUsedInput] = useState("");
+  const [carryInput, setCarryInput] = useState("");
+
+  const adjustM = useMutation({
+    mutationFn: (payload: { usedDays?: number; carryForwardDays?: number }) =>
+      adminAdjustCasualLeaveBalance(employeeId, { year, ...payload }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-emp-casual-balance", employeeId] });
+      setAdjustOpen(false);
+    },
+    onError: (e: any) => Alert.alert("Error", e?.response?.data?.message ?? "Failed to update balance"),
+  });
+
+  function openAdjust() {
+    setUsedInput(b ? String(b.usedDays) : "");
+    setCarryInput(b ? String(b.carryForwardDays) : "");
+    setAdjustOpen(true);
+  }
+
+  function submitAdjust() {
+    const payload: { usedDays?: number; carryForwardDays?: number } = {};
+    for (const [key, raw] of [["usedDays", usedInput], ["carryForwardDays", carryInput]] as const) {
+      if (raw.trim() === "") continue;
+      const n = Number(raw);
+      if (!Number.isInteger(n) || n < 0) {
+        Alert.alert("Invalid value", "Days must be a whole number, 0 or more.");
+        return;
+      }
+      payload[key] = n;
+    }
+    if (Object.keys(payload).length === 0) {
+      Alert.alert("Nothing to update", "Enter used days or carry-forward days.");
+      return;
+    }
+    adjustM.mutate(payload);
+  }
+
   return (
+    <>
+    <Modal visible={adjustOpen} transparent animationType="fade" onRequestClose={() => setAdjustOpen(false)}>
+      <View style={s.modalBackdrop}>
+        <View style={s.modalCard}>
+          <Text style={s.modalTitle}>Adjust Casual Leave — {year}</Text>
+          <Text style={s.modalHint}>Sets the opening balance (overwrites current values).</Text>
+
+          <Text style={s.inputLabel}>Used days</Text>
+          <TextInput
+            style={s.input}
+            value={usedInput}
+            onChangeText={setUsedInput}
+            keyboardType="number-pad"
+            placeholder="e.g. 4"
+          />
+          <Text style={s.inputLabel}>Carry-forward days</Text>
+          <TextInput
+            style={s.input}
+            value={carryInput}
+            onChangeText={setCarryInput}
+            keyboardType="number-pad"
+            placeholder="e.g. 2"
+          />
+
+          <View style={s.modalActions}>
+            <TouchableOpacity style={s.cancelBtn} onPress={() => setAdjustOpen(false)} disabled={adjustM.isPending}>
+              <Text style={s.cancelBtnText}>Cancel</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={s.saveBtn} onPress={submitAdjust} disabled={adjustM.isPending} activeOpacity={0.8}>
+              <Text style={s.saveBtnText}>{adjustM.isPending ? "Saving…" : "Save"}</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </Modal>
     <FlatList
       data={listQ.data?.data ?? []}
       keyExtractor={(i) => String(i.id)}
@@ -180,6 +318,7 @@ function CasualTab({ employeeId, year, onMark }: { employeeId: number; year: num
             {[
               { label: "Allocated", value: b?.allocatedDays },
               { label: "Carry Fwd", value: b?.carryForwardDays },
+              { label: "Earned", value: b?.earnedDays },
               { label: "Used", value: b?.usedDays },
               { label: "Remaining", value: b?.remainingDays },
             ].map((x) => (
@@ -201,6 +340,11 @@ function CasualTab({ employeeId, year, onMark }: { employeeId: number; year: num
           <TouchableOpacity style={s.markBtn} onPress={onMark} activeOpacity={0.8}>
             <Feather name="plus" size={15} color="#fff" />
             <Text style={s.markBtnText}>Mark Casual Leave</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={s.adjustBtn} onPress={openAdjust} activeOpacity={0.8}>
+            <Feather name="edit-2" size={14} color={colors.bytecode[600]} />
+            <Text style={s.adjustBtnText}>Adjust Balance</Text>
           </TouchableOpacity>
 
           <View style={s.filters}>
@@ -256,15 +400,16 @@ function CasualTab({ employeeId, year, onMark }: { employeeId: number; year: num
         ) : null
       }
     />
+    </>
   );
 }
 
 // ─── Screen ───────────────────────────────────────────────────
 
 export default function AdminEmployeeLeaveScreen() {
-  const { id, name } = useLocalSearchParams<{ id: string; name?: string }>();
+  const { id, name, tab: initialTab } = useLocalSearchParams<{ id: string; name?: string; tab?: Tab }>();
   const router = useRouter();
-  const [tab, setTab] = useState<Tab>("sick");
+  const [tab, setTab] = useState<Tab>(initialTab === "casual" ? "casual" : "sick");
 
   function handleMark() {
     router.push({
@@ -345,6 +490,36 @@ const s = StyleSheet.create({
     paddingVertical: 13, marginBottom: 12,
   },
   markBtnText: { fontSize: 14, fontWeight: "800", color: "#fff" },
+  adjustBtn: {
+    flexDirection: "row", alignItems: "center", justifyContent: "center",
+    gap: 8, backgroundColor: "#fff", borderRadius: 14, borderWidth: 1,
+    borderColor: colors.bytecode[600], paddingVertical: 11, marginBottom: 12,
+  },
+  adjustBtnText: { fontSize: 13, fontWeight: "700", color: colors.bytecode[600] },
+
+  modalBackdrop: {
+    flex: 1, backgroundColor: "rgba(0,0,0,0.45)", justifyContent: "center", padding: 24,
+  },
+  modalCard: { backgroundColor: "#fff", borderRadius: 16, padding: 20, gap: 6 },
+  modalTitle: { fontSize: 16, fontWeight: "800", color: colors.gray[900] },
+  modalHint: { fontSize: 12, color: colors.gray[500], marginBottom: 8 },
+  inputLabel: { fontSize: 12, fontWeight: "700", color: colors.gray[600], marginTop: 6 },
+  input: {
+    borderWidth: 1, borderColor: colors.gray[200], borderRadius: 10,
+    paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: colors.gray[900],
+  },
+  modalActions: { flexDirection: "row", gap: 10, marginTop: 14 },
+  cancelBtn: {
+    flex: 1, alignItems: "center", paddingVertical: 12, borderRadius: 12,
+    backgroundColor: colors.gray[100],
+  },
+  cancelBtnText: { fontSize: 14, fontWeight: "700", color: colors.gray[600] },
+  saveBtn: {
+    flex: 1, alignItems: "center", paddingVertical: 12, borderRadius: 12,
+    backgroundColor: colors.bytecode[600],
+  },
+  saveBtnText: { fontSize: 14, fontWeight: "800", color: "#fff" },
+
   filters: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginBottom: 12 },
   chip: {
     paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20,

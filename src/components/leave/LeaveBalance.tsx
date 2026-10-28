@@ -37,6 +37,7 @@ function metricsFor(
   return [
     m("allocated", "Allocated", cb?.allocatedDays),
     m("carry", "Carry fwd", cb?.carryForwardDays),
+    m("earned", "Earned", cb?.earnedDays),
     m("used", "Used", b?.usedDays),
     remainingMetric,
   ];
@@ -61,9 +62,6 @@ export function LeaveBalance({
         <FloatingCard
           float={false}
           valueFirst
-          title={`${cfg.label} balance`}
-          pillIcon={null}
-          pillText={String(year)}
           metrics={metricsFor(kind, balance)}
         />
       </View>

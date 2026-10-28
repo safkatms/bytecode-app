@@ -167,7 +167,7 @@ export function PageHeader({
         </TouchableOpacity>
       ) : rightActions.length > 0 ? (
         <View style={s.rightGroup}>
-          {rightActions.slice(0, 2).map((action, i) => (
+          {rightActions.slice(0, 3).map((action, i) => (
             <TouchableOpacity
               key={i}
               onPress={action.onPress}

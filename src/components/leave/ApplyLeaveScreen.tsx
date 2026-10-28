@@ -80,7 +80,7 @@ const CONFIG: Record<LeaveKind, Config> = {
     title: "Apply Casual Leave",
     success: "Your casual leave request has been submitted.",
     placeholder: "Describe your reason…",
-    info: "Weekends are excluded from the day count automatically. Carry-forward days are used first. The request will be reviewed by an admin.",
+    info: "Weekends are excluded from the day count automatically. Carry-forward days are used first, and days earned by working a weekend or holiday are added to your balance. The request will be reviewed by an admin.",
     balanceKey: "casual-leave-balance",
     listKey: "casual-leave-mine",
     balanceFn: getMyCasualLeaveBalance,
@@ -177,8 +177,8 @@ export function ApplyLeaveScreen({ kind }: { kind: LeaveKind }) {
               label="Start date"
               value={fromIso(startDate)}
               format={fmtDate}
-              tint={accent.color}
-              tintBg={accent.tint}
+              tint={colors.bytecode[600]}
+              tintBg={colors.bytecode[50]}
               onPress={() => setActivePicker("start")}
             />
             <TimeField
@@ -186,8 +186,8 @@ export function ApplyLeaveScreen({ kind }: { kind: LeaveKind }) {
               label="End date"
               value={fromIso(endDate)}
               format={fmtDate}
-              tint={accent.color}
-              tintBg={accent.tint}
+              tint={colors.bytecode[600]}
+              tintBg={colors.bytecode[50]}
               onPress={() => setActivePicker("end")}
             />
           </View>
@@ -196,8 +196,14 @@ export function ApplyLeaveScreen({ kind }: { kind: LeaveKind }) {
         <Section title="Details">
           <View style={s.reasonCard}>
             <View style={s.reasonHead}>
-              <View style={[s.reasonIcon, { backgroundColor: accent.tint }]}>
-                <Feather name="message-square" size={16} color={accent.color} />
+              <View
+                style={[s.reasonIcon, { backgroundColor: colors.bytecode[50] }]}
+              >
+                <Feather
+                  name="message-square"
+                  size={16}
+                  color={colors.bytecode[600]}
+                />
               </View>
               <Text style={s.reasonLabel}>Reason</Text>
               <Text style={s.optional}>Optional</Text>

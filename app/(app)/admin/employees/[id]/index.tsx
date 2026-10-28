@@ -27,6 +27,8 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import type { TrustedDevice } from "@/types/attendance";
 import { resetUserOtp } from "@/lib/api/users.api";
 import { OtpRevealModal } from "@/components/ui/OtpRevealModal";
+import { useSwitchUser } from "@/hooks/useSwitchUser";
+import { useAuthStore } from "@/store/auth.store";
 
 function DeviceRow({
   device,
@@ -82,6 +84,8 @@ export default function AdminEmployeeDetailScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const qc = useQueryClient();
+  const { switchTo, switchingId } = useSwitchUser();
+  const canSwitchUser = useAuthStore((st) => st.user?.canSwitchUser) ?? false;
 
   const { data: emp, isLoading } = useQuery({
     queryKey: ["admin-employee", id],
@@ -151,6 +155,36 @@ export default function AdminEmployeeDetailScreen() {
     );
   }
 
+  function confirmSwitch() {
+    if (!emp || switchingId) return;
+    const name =
+      `${emp.user.firstName ?? ""} ${emp.user.lastName ?? ""}`.trim();
+    if (!emp.isActive) {
+      Alert.alert(
+        "Employee inactive",
+        `${name} is inactive. Activate the account before switching to it.`,
+      );
+      return;
+    }
+    Alert.alert(
+      "Switch user",
+      `View the app as ${name}? You can return to your own account from Settings.`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Switch",
+          onPress: () =>
+            switchTo(emp.user.id, (err) =>
+              Alert.alert(
+                "Error",
+                getApiErrorMessage(err, "Failed to switch user"),
+              ),
+            ),
+        },
+      ],
+    );
+  }
+
   if (isLoading || !emp) {
     return (
       <View style={[s.center, { paddingTop: insets.top }]}>
@@ -170,6 +204,10 @@ export default function AdminEmployeeDetailScreen() {
           variant="bytecode"
           insetTop
           rightActions={[
+            ...(canSwitchUser
+              ? [{ icon: "repeat" as const, onPress: confirmSwitch }]
+              : []),
+
             {
               icon: "key",
               onPress: () =>
@@ -282,10 +320,7 @@ export default function AdminEmployeeDetailScreen() {
                         style={[s.weekendPill, on && s.weekendPillOn]}
                       >
                         <Text
-                          style={[
-                            s.weekendPillText,
-                            on && s.weekendPillTextOn,
-                          ]}
+                          style={[s.weekendPillText, on && s.weekendPillTextOn]}
                         >
                           {day}
                         </Text>
@@ -313,10 +348,18 @@ export default function AdminEmployeeDetailScreen() {
               }
             >
               <View style={s.actionIcon}>
-                <Feather name="calendar" size={17} color={colors.bytecode[600]} />
+                <Feather
+                  name="calendar"
+                  size={17}
+                  color={colors.bytecode[600]}
+                />
               </View>
               <Text style={s.actionLabel}>View Attendance</Text>
-              <Feather name="chevron-right" size={16} color={colors.gray[400]} />
+              <Feather
+                name="chevron-right"
+                size={16}
+                color={colors.gray[400]}
+              />
             </TouchableOpacity>
             <View style={s.sep} />
             <TouchableOpacity
@@ -332,10 +375,18 @@ export default function AdminEmployeeDetailScreen() {
               }
             >
               <View style={s.actionIcon}>
-                <Feather name="umbrella" size={17} color={colors.bytecode[600]} />
+                <Feather
+                  name="umbrella"
+                  size={17}
+                  color={colors.bytecode[600]}
+                />
               </View>
               <Text style={s.actionLabel}>View Leave</Text>
-              <Feather name="chevron-right" size={16} color={colors.gray[400]} />
+              <Feather
+                name="chevron-right"
+                size={16}
+                color={colors.gray[400]}
+              />
             </TouchableOpacity>
           </View>
 

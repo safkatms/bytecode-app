@@ -165,6 +165,10 @@ export default function AdminSickLeaveScreen() {
         insetTop
         rightActions={[
           {
+            icon: "users",
+            onPress: () => router.push("/(app)/admin/sick-leave/balances"),
+          },
+          {
             icon: "plus",
             onPress: () => router.push("/(app)/admin/sick-leave/mark"),
           },

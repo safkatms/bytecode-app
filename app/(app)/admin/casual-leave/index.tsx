@@ -19,6 +19,7 @@ import {
   adminReviewCasualLeave,
   adminGetCasualLeavePolicy,
   adminSetCasualLeavePolicy,
+  adminBackfillEarnedLeave,
 } from "@/lib/api/casual-leave.api";
 import { getApiErrorMessage } from "@/lib/api-error";
 import { colors } from "@/components/ui/theme";
@@ -157,6 +158,30 @@ export default function AdminCasualLeaveScreen() {
       Alert.alert("Error", getApiErrorMessage(e, "Failed to review request")),
   });
 
+  const backfillMut = useMutation({
+    mutationFn: adminBackfillEarnedLeave,
+    onSuccess: (r) => {
+      qc.invalidateQueries({ queryKey: ["admin-casual-leave-balances"] });
+      Alert.alert(
+        "Backfill complete",
+        `Scanned ${r.scanned} attendance records. ${r.earnedDaysOnRecord} earned day(s) on record for ${r.year}.`,
+      );
+    },
+    onError: (e) =>
+      Alert.alert("Error", getApiErrorMessage(e, "Failed to backfill earned leave")),
+  });
+
+  function confirmBackfill() {
+    Alert.alert(
+      "Backfill Earned Leave",
+      `Grant earned days for weekend / holiday work found in ${year} attendance? Safe to repeat.`,
+      [
+        { text: "Cancel", style: "cancel" },
+        { text: "Backfill", onPress: () => backfillMut.mutate(year) },
+      ],
+    );
+  }
+
   function confirmReview(
     r: CasualLeaveRequest,
     action: "approved" | "rejected",
@@ -185,6 +210,11 @@ export default function AdminCasualLeaveScreen() {
         variant="bytecode"
         insetTop
         rightActions={[
+          { icon: "refresh-cw", onPress: confirmBackfill },
+          {
+            icon: "users",
+            onPress: () => router.push("/(app)/admin/casual-leave/balances"),
+          },
           {
             icon: "plus",
             onPress: () => router.push("/(app)/admin/casual-leave/mark"),

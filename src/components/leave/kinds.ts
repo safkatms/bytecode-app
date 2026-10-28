@@ -12,6 +12,18 @@ const ACCENT = {
   tile: colors.bytecode[100],
 };
 
+const SickLeaveColor = {
+  color: colors.pink[600],
+  tint: colors.pink[50],
+  tile: colors.pink[100],
+};
+
+const CasualLeaveColor = {
+  color: colors.red[600],
+  tint: colors.red[50],
+  tile: colors.red[100],
+};
+
 /**
  * Icon per leave type. Both share the app's bytecode accent; swap `ACCENT` for
  * per-type colours here if they ever need to be told apart by colour.
@@ -26,6 +38,6 @@ export const LEAVE_KIND: Record<
     tile: string;
   }
 > = {
-  sick: { label: "Sick leave", icon: "thermometer", ...ACCENT },
-  casual: { label: "Casual leave", icon: "umbrella", ...ACCENT },
+  sick: { label: "Sick leave", icon: "thermometer", ...SickLeaveColor },
+  casual: { label: "Casual leave", icon: "umbrella", ...CasualLeaveColor },
 };

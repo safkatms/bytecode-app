@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import {
   View,
   Text,
@@ -7,24 +7,17 @@ import {
   StyleSheet,
   ActivityIndicator,
 } from "react-native";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useRouter } from "expo-router";
+import { useQuery } from "@tanstack/react-query";
 import Feather from "@expo/vector-icons/Feather";
 
-import { getAccessToken } from "@/lib/axios";
-import { useAuthStore } from "@/store/auth.store";
+import { useSwitchUser } from "@/hooks/useSwitchUser";
 import { colors } from "@/components/ui/theme";
 import { getApiErrorMessage } from "@/lib/api-error";
-import { switchUser } from "@/lib/api/auth.api";
 import { getUsers, type UserItem } from "@/lib/api/users.api";
 import { PageHeader } from "@/components/ui/PageHeader";
 
 export default function SwitchUserScreen() {
-  const router = useRouter();
-  const queryClient = useQueryClient();
-  const { user, setUser, setOriginalAdmin, setAdminToken, clearImpersonation } =
-    useAuthStore();
-  const [switchingId, setSwitchingId] = useState<number | null>(null);
+  const { switchTo, switchingId } = useSwitchUser();
 
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ["admin", "users"],
@@ -34,23 +27,7 @@ export default function SwitchUserScreen() {
     },
   });
 
-  const handleSwitch = async (target: UserItem) => {
-    setSwitchingId(target.id);
-    try {
-      const adminToken = await getAccessToken();
-      setOriginalAdmin(user);
-      setAdminToken(adminToken);
-
-      const impersonated = await switchUser(target.id);
-      setUser(impersonated);
-      await queryClient.invalidateQueries();
-      router.replace("/(app)/dashboard");
-    } catch {
-      clearImpersonation();
-    } finally {
-      setSwitchingId(null);
-    }
-  };
+  const handleSwitch = (target: UserItem) => switchTo(target.id);
 
   return (
     <View style={styles.root}>

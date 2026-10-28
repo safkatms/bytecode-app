@@ -9,12 +9,15 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Feather from "@expo/vector-icons/Feather";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { colors } from "@/components/ui/theme";
+import { useAuthStore } from "@/store/auth.store";
 
 type MenuItem = {
   icon: React.ComponentProps<typeof Feather>["name"];
   label: string;
   sublabel: string;
   path: string;
+  /** only shown to users with the canSwitchUser permission */
+  needsSwitchPermission?: boolean;
 };
 
 const SECTIONS: { title: string; items: MenuItem[] }[] = [
@@ -90,6 +93,7 @@ const SECTIONS: { title: string; items: MenuItem[] }[] = [
         label: "Switch User",
         sublabel: "View the app as another user",
         path: "/(app)/switch-user",
+        needsSwitchPermission: true,
       },
     ],
   },
@@ -113,6 +117,7 @@ function MenuRow({ item, onPress }: { item: MenuItem; onPress: () => void }) {
 export default function AdminMenuScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const canSwitchUser = useAuthStore((st) => st.user?.canSwitchUser) ?? false;
 
   return (
     <View style={s.root}>
@@ -121,19 +126,25 @@ export default function AdminMenuScreen() {
         contentContainerStyle={[s.content, { paddingBottom: insets.bottom + 32 }]}
         showsVerticalScrollIndicator={false}
       >
-        {SECTIONS.map((section) => (
-          <React.Fragment key={section.title}>
-            <Text style={s.sectionLabel}>{section.title}</Text>
-            <View style={s.card}>
-              {section.items.map((item, index) => (
-                <React.Fragment key={item.label}>
-                  <MenuRow item={item} onPress={() => router.push(item.path as any)} />
-                  {index < section.items.length - 1 && <View style={s.separator} />}
-                </React.Fragment>
-              ))}
-            </View>
-          </React.Fragment>
-        ))}
+        {SECTIONS.map((section) => {
+          const items = section.items.filter(
+            (item) => !item.needsSwitchPermission || canSwitchUser,
+          );
+          if (items.length === 0) return null;
+          return (
+            <React.Fragment key={section.title}>
+              <Text style={s.sectionLabel}>{section.title}</Text>
+              <View style={s.card}>
+                {items.map((item, index) => (
+                  <React.Fragment key={item.label}>
+                    <MenuRow item={item} onPress={() => router.push(item.path as any)} />
+                    {index < items.length - 1 && <View style={s.separator} />}
+                  </React.Fragment>
+                ))}
+              </View>
+            </React.Fragment>
+          );
+        })}
       </ScrollView>
     </View>
   );
