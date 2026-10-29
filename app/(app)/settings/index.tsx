@@ -165,6 +165,13 @@ export default function SettingsScreen() {
       onPress: () => router.push("/(app)/change-password"),
       chevron: true,
     },
+    {
+      icon: "info",
+      label: "About",
+      sublabel: "App version & support",
+      onPress: () => router.push("/(app)/settings/about"),
+      chevron: true,
+    },
   ];
 
   const dangerItems: SettingItem[] = [

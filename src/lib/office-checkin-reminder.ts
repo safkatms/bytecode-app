@@ -28,13 +28,6 @@ const CHECK_IN_CONTENT = {
   channelId: OFFICE_REMINDER_CHANNEL,
 };
 
-async function isEligibleForReminder() {
-  const today = await getTodayStatus();
-  if (today.checkedIn) return false;
-  if (today.status && SKIP_STATUSES.has(today.status)) return false;
-  return true;
-}
-
 function tenAmToday() {
   const d = new Date();
   d.setHours(NOTIFY_HOUR, 0, 0, 0);
@@ -75,6 +68,24 @@ async function scheduleTenAmNotification() {
   await SecureStore.setItemAsync(PENDING_NOTIFICATION_KEY, id);
 }
 
+/** Runs the same decision the ENTER handler does. Returns what happened, for diagnostics/testing. */
+export async function handleArrivalReminder(): Promise<string> {
+  const today = await getTodayStatus();
+  if (today.checkedIn) return "Skipped: already checked in today.";
+  if (today.status && SKIP_STATUSES.has(today.status)) {
+    return `Skipped: today's status is "${today.status}".`;
+  }
+  if (await withinCooldown()) return "Skipped: within the 30-minute cooldown.";
+
+  const nowHour = new Date().getHours();
+  if (nowHour >= NOTIFY_HOUR) {
+    await fireArrivalNotification();
+    return "Fired notification immediately.";
+  }
+  await scheduleTenAmNotification();
+  return `Scheduled for 10:00 (it is currently ${nowHour}:${String(new Date().getMinutes()).padStart(2, "0")}).`;
+}
+
 TaskManager.defineTask(GEOFENCE_TASK, async ({ data, error }) => {
   if (error) return;
   const { eventType } = data as { eventType: Location.GeofencingEventType };
@@ -87,15 +98,7 @@ TaskManager.defineTask(GEOFENCE_TASK, async ({ data, error }) => {
   if (eventType !== Location.GeofencingEventType.Enter) return;
 
   try {
-    if (!(await isEligibleForReminder())) return;
-    if (await withinCooldown()) return;
-
-    const nowHour = new Date().getHours();
-    if (nowHour >= NOTIFY_HOUR) {
-      await fireArrivalNotification();
-    } else {
-      await scheduleTenAmNotification();
-    }
+    await handleArrivalReminder();
   } catch {
     // Background network/auth failure — the next ENTER event will retry.
   }
@@ -124,4 +127,20 @@ export async function unregisterOfficeGeofence() {
   const started = await Location.hasStartedGeofencingAsync(GEOFENCE_TASK);
   if (started) await Location.stopGeofencingAsync(GEOFENCE_TASK);
   await cancelPendingArrivalNotification();
+}
+
+export async function getReminderDiagnostics() {
+  const office = await getOfficeLocation();
+  const bgPermission = await Location.getBackgroundPermissionsAsync();
+  const notifPermission = await Notifications.getPermissionsAsync();
+  const geofenceStarted = await Location.hasStartedGeofencingAsync(GEOFENCE_TASK);
+  const today = await getTodayStatus().catch(() => null);
+
+  return {
+    office: office ? `${office.name} (radius ${office.radiusMeters}m)` : "not configured",
+    backgroundLocation: bgPermission.status,
+    notifications: notifPermission.status,
+    geofenceStarted,
+    todayStatus: today ? `checkedIn=${today.checkedIn}, status=${today.status ?? "none"}` : "failed to fetch",
+  };
 }

@@ -41,6 +41,7 @@ export default function AdminMarkCasualLeaveScreen() {
   const [selectedEmp, setSelectedEmp] = useState<Employee | null>(null);
   const [empSearch, setEmpSearch] = useState("");
   const [date, setDate] = useState(todayISO());
+  const [isHalfDay, setIsHalfDay] = useState(false);
   const [note, setNote] = useState("");
   const [error, setError] = useState("");
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -67,7 +68,12 @@ export default function AdminMarkCasualLeaveScreen() {
   const markMut = useMutation({
     mutationFn: () => {
       if (!selectedEmp) throw new Error("Select an employee");
-      return adminMarkCasualLeave({ employeeId: selectedEmp.id, date, note: note.trim() || undefined });
+      return adminMarkCasualLeave({
+        employeeId: selectedEmp.id,
+        date,
+        note: note.trim() || undefined,
+        isHalfDay,
+      });
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["admin-casual-leave"] });
@@ -143,6 +149,26 @@ export default function AdminMarkCasualLeaveScreen() {
               </View>
               <Text style={[s.textInput, { lineHeight: 50 }]}>{fmtDateDisplay(date)}</Text>
             </TouchableOpacity>
+          </View>
+
+          <View style={s.field}>
+            <Text style={s.label}>DURATION</Text>
+            <View style={s.segment}>
+              <TouchableOpacity
+                style={[s.segmentOption, !isHalfDay && s.segmentOptionActive]}
+                onPress={() => setIsHalfDay(false)}
+                activeOpacity={0.8}
+              >
+                <Text style={[s.segmentText, !isHalfDay && s.segmentTextActive]}>Full day</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[s.segmentOption, isHalfDay && s.segmentOptionActive]}
+                onPress={() => setIsHalfDay(true)}
+                activeOpacity={0.8}
+              >
+                <Text style={[s.segmentText, isHalfDay && s.segmentTextActive]}>Half day</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
 
@@ -298,6 +324,17 @@ const s = StyleSheet.create({
   empInitials: { fontSize: 12, fontWeight: "800", color: colors.bytecode[700] },
   empName: { fontSize: 14, fontWeight: "700", color: colors.gray[900] },
   empSub: { fontSize: 11, color: colors.gray[400], marginTop: 1 },
+  segment: {
+    flexDirection: "row", backgroundColor: colors.bytecode[50],
+    borderRadius: 14, padding: 4, gap: 4,
+  },
+  segmentOption: {
+    flex: 1, alignItems: "center", justifyContent: "center",
+    height: 42, borderRadius: 11,
+  },
+  segmentOptionActive: { backgroundColor: "#fff" },
+  segmentText: { fontSize: 13, fontWeight: "700", color: colors.gray[400] },
+  segmentTextActive: { color: colors.bytecode[700] },
   iosOverlay: { flex: 1, justifyContent: "flex-end", backgroundColor: "rgba(0,0,0,0.3)" },
   iosSheet: { backgroundColor: "#fff", borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingBottom: 32 },
   iosSheetHeader: {

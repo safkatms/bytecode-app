@@ -2,7 +2,7 @@
 
 import React from "react";
 import {
-  View, Text, StyleSheet, TouchableOpacity, ScrollView,
+  View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -10,6 +10,10 @@ import Feather from "@expo/vector-icons/Feather";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { colors } from "@/components/ui/theme";
 import { useAuthStore } from "@/store/auth.store";
+import {
+  getReminderDiagnostics,
+  handleArrivalReminder,
+} from "@/lib/office-checkin-reminder";
 
 type MenuItem = {
   icon: React.ComponentProps<typeof Feather>["name"];
@@ -145,6 +149,46 @@ export default function AdminMenuScreen() {
             </React.Fragment>
           );
         })}
+
+        <Text style={s.sectionLabel}>DEBUG</Text>
+        <View style={s.card}>
+          <MenuRow
+            item={{
+              icon: "activity",
+              label: "Reminder diagnostics",
+              sublabel: "Check permissions, geofence, today's status",
+              path: "",
+            }}
+            onPress={async () => {
+              const d = await getReminderDiagnostics();
+              Alert.alert(
+                "Reminder diagnostics",
+                `Office: ${d.office}\n` +
+                  `Background location: ${d.backgroundLocation}\n` +
+                  `Notifications: ${d.notifications}\n` +
+                  `Geofence started: ${d.geofenceStarted}\n` +
+                  `Today: ${d.todayStatus}`,
+              );
+            }}
+          />
+          <View style={s.separator} />
+          <MenuRow
+            item={{
+              icon: "bell",
+              label: "Simulate arrival now",
+              sublabel: "Run the reminder logic without GPS",
+              path: "",
+            }}
+            onPress={async () => {
+              try {
+                const result = await handleArrivalReminder();
+                Alert.alert("Simulate arrival", result);
+              } catch (e) {
+                Alert.alert("Simulate arrival failed", String(e));
+              }
+            }}
+          />
+        </View>
       </ScrollView>
     </View>
   );

@@ -81,6 +81,7 @@ export async function adminMarkCasualLeave(payload: {
     employeeId: number;
     date: string;
     note?: string;
+    isHalfDay?: boolean;
 }): Promise<CasualLeaveRequest> {
     const res = await api.post<ApiResponse<CasualLeaveRequest>>('/admin/casual-leave/mark', payload);
     return res.data.data!;
