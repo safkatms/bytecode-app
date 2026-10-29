@@ -32,6 +32,14 @@
       "expo-font",
       "@react-native-community/datetimepicker",
       [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Allow ByteCode to use your location in the background to detect when you arrive at the office and remind you to check in.",
+          "isAndroidBackgroundLocationEnabled": true
+        }
+      ],
+      "expo-notifications",
+      [
         "expo-splash-screen",
         {
           "image": "./assets/bytecode.png",

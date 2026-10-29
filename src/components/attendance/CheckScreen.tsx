@@ -19,6 +19,7 @@ import { colors } from "@/components/ui/theme";
 import { useOfficeGeofence } from "./useOfficeGeofence";
 import { LocationCard } from "./LocationCard";
 import { TimeField, TimePickerSheet } from "./TimePicker";
+import { cancelPendingArrivalNotification } from "@/lib/office-checkin-reminder";
 
 type Variant = "in" | "out";
 
@@ -81,6 +82,7 @@ export function CheckScreen({
       qc.invalidateQueries({ queryKey: ["employee-dashboard-overview"] });
       qc.invalidateQueries({ queryKey: ["weekly-timesheet"] });
       qc.invalidateQueries({ queryKey: ["employee-today-status"] });
+      if (variant === "in") cancelPendingArrivalNotification();
       router.back();
     },
     onError: (err) => setError(getApiErrorMessage(err, copy.errorFallback)),
