@@ -14,6 +14,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Feather from "@expo/vector-icons/Feather";
 
 import { PageHeader } from "@/components/ui/PageHeader";
+import { Avatar } from "@/components/ui/Avatar";
 import { colors } from "@/components/ui/theme";
 import { useAuthStore } from "@/store/auth.store";
 import { logout } from "@/lib/auth";
@@ -209,12 +210,12 @@ export default function SettingsScreen() {
       >
         {/* User info */}
         <View style={styles.profileCard}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>
-              {user?.firstName?.[0] ?? ""}
-              {user?.lastName?.[0] ?? ""}
-            </Text>
-          </View>
+          <Avatar
+            uri={user?.avatarUrl}
+            firstName={user?.firstName}
+            lastName={user?.lastName}
+            size={48}
+          />
           <View style={styles.profileInfo}>
             <Text style={styles.profileName}>
               {user?.firstName} {user?.lastName}

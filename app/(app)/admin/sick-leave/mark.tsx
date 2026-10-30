@@ -16,6 +16,7 @@ import { getApiErrorMessage } from "@/lib/api-error";
 import { colors } from "@/components/ui/theme";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { AlertUI } from "@/components/ui/Alert";
+import { Avatar } from "@/components/ui/Avatar";
 import type { Employee } from "@/types/attendance";
 
 function pad(n: number) { return String(n).padStart(2, "0"); }
@@ -118,12 +119,12 @@ export default function AdminMarkSickLeaveScreen() {
               </View>
               {selectedEmp ? (
                 <View style={s.empSelectedInner}>
-                  <View style={s.empAvatar}>
-                    <Text style={s.empInitials}>
-                      {(selectedEmp.user.firstName?.[0] ?? "?").toUpperCase()}
-                      {(selectedEmp.user.lastName?.[0] ?? "").toUpperCase()}
-                    </Text>
-                  </View>
+                  <Avatar
+                    uri={selectedEmp.user.avatarUrl}
+                    firstName={selectedEmp.user.firstName}
+                    lastName={selectedEmp.user.lastName}
+                    size={32}
+                  />
                   <View>
                     <Text style={s.empName}>{selectedEmp.user.firstName} {selectedEmp.user.lastName}</Text>
                     <Text style={s.empSub}>{selectedEmp.employeeCode}</Text>
@@ -257,12 +258,12 @@ export default function AdminMarkSickLeaveScreen() {
                 onPress={() => { setSelectedEmp(item); setEmpPickerOpen(false); setEmpSearch(""); }}
                 activeOpacity={0.8}
               >
-                <View style={s.empItemAvatar}>
-                  <Text style={s.empItemInitials}>
-                    {(item.user.firstName?.[0] ?? "?").toUpperCase()}
-                    {(item.user.lastName?.[0] ?? "").toUpperCase()}
-                  </Text>
-                </View>
+                <Avatar
+                  uri={item.user.avatarUrl}
+                  firstName={item.user.firstName}
+                  lastName={item.user.lastName}
+                  size={38}
+                />
                 <View style={{ flex: 1 }}>
                   <Text style={s.empItemName}>{item.user.firstName} {item.user.lastName}</Text>
                   <Text style={s.empItemSub}>{item.employeeCode}</Text>
@@ -308,11 +309,6 @@ const s = StyleSheet.create({
   placeholder: { flex: 1, height: 50, lineHeight: 50, paddingHorizontal: 12, fontSize: 15, color: colors.gray[400] },
 
   empSelectedInner: { flex: 1, flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 12, paddingVertical: 8 },
-  empAvatar: {
-    width: 32, height: 32, borderRadius: 9,
-    backgroundColor: colors.bytecode[50], alignItems: "center", justifyContent: "center",
-  },
-  empInitials: { fontSize: 12, fontWeight: "800", color: colors.bytecode[700] },
   empName: { fontSize: 14, fontWeight: "700", color: colors.gray[900] },
   empSub: { fontSize: 11, color: colors.gray[400], marginTop: 1 },
 
@@ -340,11 +336,6 @@ const s = StyleSheet.create({
   empSearchInput: { flex: 1, fontSize: 14, color: colors.gray[900] },
   empList: { paddingHorizontal: 16, paddingBottom: 40 },
   empItem: { flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 13 },
-  empItemAvatar: {
-    width: 38, height: 38, borderRadius: 10,
-    backgroundColor: colors.bytecode[50], alignItems: "center", justifyContent: "center",
-  },
-  empItemInitials: { fontSize: 13, fontWeight: "800", color: colors.bytecode[700] },
   empItemName: { fontSize: 14, fontWeight: "700", color: colors.gray[900] },
   empItemSub: { fontSize: 11, color: colors.gray[400], marginTop: 1 },
   empEmpty: { alignItems: "center", paddingTop: 48 },

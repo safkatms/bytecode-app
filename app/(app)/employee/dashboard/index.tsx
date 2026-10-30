@@ -127,7 +127,12 @@ export default function EmployeeDashboardScreen() {
       <DashboardHero
         paddingTop={insets.top + 14}
         date={fmtLongDate()}
-        greeting={user?.firstName ? `Hi, ${user.firstName} 👋` : "My Attendance"}
+        greeting={user?.firstName ? `Hi, ${user.firstName}` : "My Attendance"}
+        avatar={{
+          uri: data.profile?.avatarUrl ?? user?.avatarUrl,
+          firstName: user?.firstName,
+          lastName: user?.lastName,
+        }}
         statusLabel={statusLabel}
         statusColor={statusColor}
         presence={presence}
@@ -233,10 +238,13 @@ export default function EmployeeDashboardScreen() {
                 metaIcon="clock"
                 meta={
                   device.lastSeenAt
-                    ? `Last seen ${new Date(device.lastSeenAt).toLocaleDateString(
-                        "en-US",
-                        { month: "short", day: "numeric", year: "numeric" },
-                      )}`
+                    ? `Last seen ${new Date(
+                        device.lastSeenAt,
+                      ).toLocaleDateString("en-US", {
+                        month: "short",
+                        day: "numeric",
+                        year: "numeric",
+                      })}`
                     : "Never seen"
                 }
                 badgeText="Active"

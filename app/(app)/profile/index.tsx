@@ -9,14 +9,18 @@ import {
   TextInput,
   KeyboardAvoidingView,
   Platform,
+  Image,
+  TouchableOpacity,
+  ActivityIndicator,
 } from "react-native";
+import * as ImagePicker from "expo-image-picker";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Feather from "@expo/vector-icons/Feather";
-import { getMe, updateMe } from "@/lib/api/users.api";
+import { getMe, updateMe, uploadMyAvatar } from "@/lib/api/users.api";
 import { useAuthStore } from "@/store/auth.store";
 import { getApiErrorMessage } from "@/lib/api-error";
 import { colors } from "@/components/ui/theme";
@@ -123,6 +127,31 @@ export default function ProfileScreen() {
     onError: (err) => setError(getApiErrorMessage(err)),
   });
 
+  const avatarMut = useMutation({
+    mutationFn: uploadMyAvatar,
+    onSuccess: async () => {
+      setError("");
+      const fresh = await qc.fetchQuery({ queryKey: ["me"], queryFn: getMe, staleTime: 0 });
+      setUser(fresh as any);
+    },
+    onError: (err) => setError(getApiErrorMessage(err, "Image upload failed")),
+  });
+
+  const pickAvatar = async () => {
+    const res = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ["images"],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.7,
+    });
+    if (!res.canceled && res.assets[0]) {
+      avatarMut.mutate({
+        uri: res.assets[0].uri,
+        mimeType: res.assets[0].mimeType ?? undefined,
+      });
+    }
+  };
+
   if (isLoading) {
     return (
       <View style={[s.center, { paddingTop: insets.top }]}>
@@ -161,12 +190,30 @@ export default function ProfileScreen() {
 
         {/* Avatar block */}
         <View style={s.avatarBlock}>
-          <View style={s.avatar}>
-            <Text style={s.avatarText}>
-              {me?.firstName?.[0] ?? ""}
-              {me?.lastName?.[0] ?? ""}
-            </Text>
-          </View>
+          <TouchableOpacity
+            style={s.avatar}
+            onPress={pickAvatar}
+            disabled={avatarMut.isPending}
+            activeOpacity={0.8}
+          >
+            {me?.avatarUrl ? (
+              <Image source={{ uri: me.avatarUrl }} style={s.avatarImage} />
+            ) : (
+              <Text style={s.avatarText}>
+                {me?.firstName?.[0] ?? ""}
+                {me?.lastName?.[0] ?? ""}
+              </Text>
+            )}
+            {avatarMut.isPending ? (
+              <View style={s.avatarOverlay}>
+                <ActivityIndicator color="#fff" />
+              </View>
+            ) : (
+              <View style={s.avatarBadge}>
+                <Feather name="camera" size={11} color="#fff" />
+              </View>
+            )}
+          </TouchableOpacity>
           <View>
             <Text style={s.avatarName}>
               {me?.firstName} {me?.lastName}
@@ -299,6 +346,27 @@ const s = StyleSheet.create({
     height: 56,
     borderRadius: 28,
     backgroundColor: colors.bytecode[100],
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  avatarImage: { width: 56, height: 56, borderRadius: 28 },
+  avatarOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    borderRadius: 28,
+    backgroundColor: "rgba(0,0,0,0.45)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  avatarBadge: {
+    position: "absolute",
+    right: -2,
+    bottom: -2,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: colors.bytecode[600],
+    borderWidth: 2,
+    borderColor: "#fff",
     alignItems: "center",
     justifyContent: "center",
   },

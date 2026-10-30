@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, Image } from "react-native";
 import Feather from "@expo/vector-icons/Feather";
 import { colors } from "@/components/ui/theme";
 
@@ -91,11 +91,13 @@ export function InfoCard({
 /** Row with initials avatar, name/meta and a coloured status pill. */
 export function PersonRow({
   name,
+  avatarUrl,
   meta,
   pillLabel,
   pillColor,
 }: {
   name: string;
+  avatarUrl?: string | null;
   meta: string;
   pillLabel: string;
   pillColor: string;
@@ -110,7 +112,11 @@ export function PersonRow({
   return (
     <View style={s.personRow}>
       <View style={[s.avatar, { backgroundColor: `${pillColor}18` }]}>
-        <Text style={[s.avatarText, { color: pillColor }]}>{initials}</Text>
+        {avatarUrl ? (
+          <Image source={{ uri: avatarUrl }} style={s.avatarImage} />
+        ) : (
+          <Text style={[s.avatarText, { color: pillColor }]}>{initials}</Text>
+        )}
       </View>
       <View style={s.personBody}>
         <Text style={s.personName} numberOfLines={1}>
@@ -231,6 +237,7 @@ const s = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  avatarImage: { width: 42, height: 42, borderRadius: 14 },
   avatarText: { fontSize: 13, fontWeight: "900" },
   personBody: { flex: 1, gap: 2 },
   personName: { fontSize: 14, fontWeight: "800", color: colors.gray[900] },

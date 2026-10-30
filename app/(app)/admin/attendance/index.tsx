@@ -35,6 +35,7 @@ import {
   ATTENDANCE_STATUS_LABEL as STATUS_LABEL,
   ALL_ATTENDANCE_STATUSES as ALL_STATUSES,
 } from "@/lib/attendance-status";
+import { parseWallClock } from "@/lib/date";
 
 function todayStr() {
   const d = new Date();
@@ -42,7 +43,7 @@ function todayStr() {
 }
 function fmt(iso: string | null) {
   if (!iso) return "--:--";
-  return new Date(iso).toLocaleTimeString([], {
+  return parseWallClock(iso).toLocaleTimeString([], {
     hour: "2-digit",
     minute: "2-digit",
   });
@@ -55,7 +56,7 @@ function fmtHours(h: number) {
   return `${hrs}h ${mins}m`;
 }
 function fmtDate(iso: string) {
-  return new Date(iso).toLocaleDateString("en-BD", {
+  return parseWallClock(iso).toLocaleDateString("en-BD", {
     day: "numeric",
     month: "short",
   });

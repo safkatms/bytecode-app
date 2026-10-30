@@ -20,6 +20,7 @@ import {
 } from "@/lib/api/attendance.api";
 import { colors } from "@/components/ui/theme";
 import { Spinner } from "@/components/ui/Spinner";
+import { Avatar } from "@/components/ui/Avatar";
 import { PageHeader } from "@/components/ui/PageHeader";
 import type { Employee } from "@/types/attendance";
 
@@ -34,13 +35,14 @@ function EmployeeRow({
   onToggle: () => void;
   onDelete: () => void;
 }) {
-  const initials =
-    `${emp.user.firstName?.[0] ?? ""}${emp.user.lastName?.[0] ?? ""}` || "?";
   return (
     <TouchableOpacity style={s.row} onPress={onPress} activeOpacity={0.7}>
-      <View style={s.rowAvatar}>
-        <Text style={s.rowInitials}>{initials}</Text>
-      </View>
+      <Avatar
+        uri={emp.user.avatarUrl}
+        firstName={emp.user.firstName}
+        lastName={emp.user.lastName}
+        size={44}
+      />
       <View style={s.rowInfo}>
         <Text style={s.rowName} numberOfLines={1}>
           {emp.user.firstName} {emp.user.lastName}

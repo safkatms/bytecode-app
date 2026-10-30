@@ -23,10 +23,6 @@ import { AlertUI } from "@/components/ui/Alert";
 import { getApiErrorMessage } from "@/lib/api-error";
 import { colors } from "@/components/ui/theme";
 import {
-  ATTENDANCE_STATUS_COLOR,
-  ATTENDANCE_STATUS_LABEL,
-} from "@/lib/attendance-status";
-import {
   usePresence,
   DashboardHero,
   FloatingCard,
@@ -204,9 +200,12 @@ export default function AdminDashboardScreen() {
       <DashboardHero
         paddingTop={insets.top + 14}
         date={fmtLongDate()}
-        greeting={
-          user?.firstName ? `Hi, ${user.firstName} 👋` : "Admin Dashboard"
-        }
+        greeting={user?.firstName ? `Hi, ${user.firstName}` : "Admin Dashboard"}
+        avatar={{
+          uri: myDay?.profile?.avatarUrl ?? user?.avatarUrl,
+          firstName: user?.firstName,
+          lastName: user?.lastName,
+        }}
         statusLabel={`${presentPct}% attendance today`}
         statusColor={colors.green[400]}
         presence={presence}
@@ -347,21 +346,26 @@ export default function AdminDashboardScreen() {
         >
           <Card>
             {activity.map((item, i) => (
-              <React.Fragment key={item.id}>
+              <React.Fragment key={`${item.id}-${item.type}`}>
                 <PersonRow
                   name={item.employee}
+                  avatarUrl={item.avatarUrl}
                   meta={`${deptName(item.department)} · ${fmtClockTime(
-                    item.checkInTime,
+                    item.time,
                   )}${item.isManual ? " · Manual" : ""}`}
                   pillLabel={
-                    ATTENDANCE_STATUS_LABEL[
-                      item.status as keyof typeof ATTENDANCE_STATUS_LABEL
-                    ] ?? item.status.replace(/_/g, " ")
+                    item.type === "check_out"
+                      ? "Checked out"
+                      : item.isLate
+                        ? `Late · ${item.lateMinutes ?? 0}m`
+                        : "Checked in"
                   }
                   pillColor={
-                    ATTENDANCE_STATUS_COLOR[
-                      item.status as keyof typeof ATTENDANCE_STATUS_COLOR
-                    ] ?? colors.gray[400]
+                    item.type === "check_out"
+                      ? colors.red[500]
+                      : item.isLate
+                        ? colors.amber[600]
+                        : colors.green[600]
                   }
                 />
                 {i < activity.length - 1 && <CardDivider />}

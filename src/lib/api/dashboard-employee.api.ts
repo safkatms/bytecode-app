@@ -2,6 +2,12 @@ import { api } from '@/lib/axios';
 import type { ApiResponse } from '@/types/api';
 
 export interface EmployeeOverview {
+    profile?: {
+        name: string | null;
+        employeeCode: string | null;
+        designation: string | null;
+        avatarUrl: string | null;
+    };
     today: {
         checkedIn: boolean;
         checkedOut: boolean;

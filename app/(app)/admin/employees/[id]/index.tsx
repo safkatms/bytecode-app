@@ -8,6 +8,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   Alert,
+  Image,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -28,6 +29,7 @@ import type { TrustedDevice } from "@/types/attendance";
 import { resetUserOtp } from "@/lib/api/users.api";
 import { OtpRevealModal } from "@/components/ui/OtpRevealModal";
 import { useSwitchUser } from "@/hooks/useSwitchUser";
+import { parseWallClock } from "@/lib/date";
 import { useAuthStore } from "@/store/auth.store";
 
 function DeviceRow({
@@ -245,7 +247,14 @@ export default function AdminEmployeeDetailScreen() {
           {/* Profile */}
           <View style={s.profileCard}>
             <View style={s.avatar}>
-              <Text style={s.avatarText}>{initials}</Text>
+              {emp.user.avatarUrl ? (
+                <Image
+                  source={{ uri: emp.user.avatarUrl }}
+                  style={s.avatarImage}
+                />
+              ) : (
+                <Text style={s.avatarText}>{initials}</Text>
+              )}
             </View>
             <Text style={s.profileName}>
               {emp.user.firstName} {emp.user.lastName}
@@ -306,6 +315,29 @@ export default function AdminEmployeeDetailScreen() {
               <View key={label} style={s.infoRow}>
                 <Text style={s.infoLabel}>{label}</Text>
                 <Text style={s.infoValue}>{value}</Text>
+              </View>
+            ))}
+            {[
+              ["Father's Name", emp.fatherName],
+              [
+                "Date of Birth",
+                emp.dateOfBirth
+                  ? parseWallClock(emp.dateOfBirth).toLocaleDateString(
+                      "en-BD",
+                      { day: "numeric", month: "long", year: "numeric" },
+                    )
+                  : null,
+              ],
+              ["Blood Group", emp.bloodGroup],
+              ["Office Email", emp.officeEmail],
+              ["Emergency Contact", emp.emergencyContactNo],
+              ["Present Address", emp.presentAddress],
+              ["Permanent Address", emp.permanentAddress],
+              ["Prime Bank A/C", emp.primeBankAccountNo],
+            ].map(([label, value]) => (
+              <View key={label} style={s.infoRow}>
+                <Text style={s.infoLabel}>{label}</Text>
+                <Text style={s.infoValue}>{value || "—"}</Text>
               </View>
             ))}
             <View style={s.infoRow}>
@@ -444,6 +476,7 @@ const s = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  avatarImage: { width: 72, height: 72, borderRadius: 36 },
   avatarText: { fontSize: 26, fontWeight: "800", color: colors.bytecode[700] },
   profileName: { fontSize: 20, fontWeight: "800", color: colors.gray[900] },
   profileEmail: { fontSize: 13, color: colors.gray[400] },

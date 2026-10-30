@@ -1,6 +1,8 @@
+import { parseWallClock } from "@/lib/date";
+
 export function fmtClockTime(iso: string | null) {
   if (!iso) return "—";
-  return new Date(iso).toLocaleTimeString("en-US", {
+  return parseWallClock(iso).toLocaleTimeString("en-US", {
     hour: "2-digit",
     minute: "2-digit",
     hour12: true,

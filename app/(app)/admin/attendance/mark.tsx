@@ -27,7 +27,9 @@ import { getApiErrorMessage } from "@/lib/api-error";
 import { colors } from "@/components/ui/theme";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { AlertUI } from "@/components/ui/Alert";
+import { Avatar } from "@/components/ui/Avatar";
 import type { AttendanceStatus, Employee } from "@/types/attendance";
+import { toLocalIsoDate, toLocalIsoDateTime } from "@/lib/date";
 
 // ─── Constants ────────────────────────────────────────────────
 
@@ -38,12 +40,8 @@ const STATUS_COLOR = {
 
 // ─── Helpers ──────────────────────────────────────────────────
 
-function pad(n: number) {
-  return String(n).padStart(2, "0");
-}
 function todayISO() {
-  const d = new Date();
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  return toLocalIsoDate();
 }
 function fmtDateDisplay(iso: string) {
   return new Date(iso).toLocaleDateString("en-US", {
@@ -139,8 +137,8 @@ export default function AdminMarkAttendanceScreen() {
         employeeId: selectedEmp.id,
         attendanceDate: date,
         status,
-        checkInTime: checkInDate?.toISOString(),
-        checkOutTime: checkOutDate?.toISOString(),
+        checkInTime: checkInDate ? toLocalIsoDateTime(checkInDate) : undefined,
+        checkOutTime: checkOutDate ? toLocalIsoDateTime(checkOutDate) : undefined,
         lateMinutes,
         note: note.trim() || undefined,
       });
@@ -157,9 +155,7 @@ export default function AdminMarkAttendanceScreen() {
     if (Platform.OS === "android") setActivePicker(null);
     if (!selected) return;
     if (activePicker === "date") {
-      setDate(
-        `${selected.getFullYear()}-${pad(selected.getMonth() + 1)}-${pad(selected.getDate())}`,
-      );
+      setDate(toLocalIsoDate(selected));
     } else if (activePicker === "checkIn") {
       setCheckInDate(selected);
     } else if (activePicker === "checkOut") {
@@ -220,12 +216,12 @@ export default function AdminMarkAttendanceScreen() {
               </View>
               {selectedEmp ? (
                 <View style={s.empSelectedInner}>
-                  <View style={s.empAvatar}>
-                    <Text style={s.empInitials}>
-                      {(selectedEmp.user.firstName?.[0] ?? "?").toUpperCase()}
-                      {(selectedEmp.user.lastName?.[0] ?? "").toUpperCase()}
-                    </Text>
-                  </View>
+                  <Avatar
+                    uri={selectedEmp.user.avatarUrl}
+                    firstName={selectedEmp.user.firstName}
+                    lastName={selectedEmp.user.lastName}
+                    size={32}
+                  />
                   <View>
                     <Text style={s.empName}>
                       {selectedEmp.user.firstName} {selectedEmp.user.lastName}
@@ -520,12 +516,12 @@ export default function AdminMarkAttendanceScreen() {
                 }}
                 activeOpacity={0.8}
               >
-                <View style={s.empItemAvatar}>
-                  <Text style={s.empItemInitials}>
-                    {(item.user.firstName?.[0] ?? "?").toUpperCase()}
-                    {(item.user.lastName?.[0] ?? "").toUpperCase()}
-                  </Text>
-                </View>
+                <Avatar
+                  uri={item.user.avatarUrl}
+                  firstName={item.user.firstName}
+                  lastName={item.user.lastName}
+                  size={38}
+                />
                 <View style={{ flex: 1 }}>
                   <Text style={s.empItemName}>
                     {item.user.firstName} {item.user.lastName}
@@ -632,15 +628,6 @@ const s = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 8,
   },
-  empAvatar: {
-    width: 32,
-    height: 32,
-    borderRadius: 9,
-    backgroundColor: colors.bytecode[50],
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  empInitials: { fontSize: 12, fontWeight: "800", color: colors.bytecode[700] },
   empName: { fontSize: 14, fontWeight: "700", color: colors.gray[900] },
   empSub: { fontSize: 11, color: colors.gray[400], marginTop: 1 },
 
@@ -739,19 +726,6 @@ const s = StyleSheet.create({
     alignItems: "center",
     gap: 12,
     paddingVertical: 13,
-  },
-  empItemAvatar: {
-    width: 38,
-    height: 38,
-    borderRadius: 10,
-    backgroundColor: colors.bytecode[50],
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  empItemInitials: {
-    fontSize: 13,
-    fontWeight: "800",
-    color: colors.bytecode[700],
   },
   empItemName: { fontSize: 14, fontWeight: "700", color: colors.gray[900] },
   empItemSub: { fontSize: 11, color: colors.gray[400], marginTop: 1 },

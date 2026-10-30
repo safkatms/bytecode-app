@@ -27,15 +27,19 @@ export interface DepartmentBreakdownItem {
 }
 
 export interface RecentActivityItem {
+    /** attendance record id — a record can appear as both a check_in and a check_out event */
     id: number;
+    type: 'check_in' | 'check_out';
+    time: string;
     employee: string;
+    avatarUrl: string | null;
     employeeCode: string;
     department: { id: number; name: string } | string | null;
     date: string;
-    status: string;
-    checkInTime: string | null;
-    checkOutTime: string | null;
     isManual: boolean;
+    /** check_in events only */
+    isLate?: boolean;
+    lateMinutes?: number;
 }
 
 export interface LateReportItem {
@@ -43,7 +47,7 @@ export interface LateReportItem {
         id: number;
         employeeCode: string;
         department: { id: number; name: string } | string | null;
-        user: { firstName: string; lastName: string };
+        user: { firstName: string; lastName: string; avatarUrl: string | null };
     };
     count: number;
     totalLateMinutes: number;

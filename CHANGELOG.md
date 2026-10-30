@@ -1,5 +1,19 @@
 # Changelog
 
+## v26.10.4 - 2026-10-28
+
+### New
+
+- **Leave balances (admin):** searchable, paginated list of every employee's sick and casual leave balance — allocated, carried forward, earned, used and remaining.
+- **Opening-balance correction:** admins can adjust an employee's used sick or casual leave days directly from their profile, for leave taken before the app was in use.
+- **Earned leave backfill:** re-scan past attendance to grant earned casual days for weekend or holiday work that predates this feature.
+- **Switch User** is now only shown to admins who have been granted that permission, instead of to every admin.
+
+### Changed
+
+- **Apply Casual Leave** now shares the same screen as Apply Sick Leave.
+- **Dashboard quick actions:** Timesheet moved to the top of your personal actions, Casual Leave switched from green to red, and admin action tiles now line up in even rows of three.
+
 ## v26.10.3 - 2026-10-26
 
 ### New

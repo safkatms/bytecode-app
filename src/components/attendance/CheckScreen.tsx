@@ -20,6 +20,7 @@ import { useOfficeGeofence } from "./useOfficeGeofence";
 import { LocationCard } from "./LocationCard";
 import { TimeField, TimePickerSheet } from "./TimePicker";
 import { cancelPendingArrivalNotification } from "@/lib/office-checkin-reminder";
+import { toLocalIsoDateTime } from "@/lib/date";
 
 type Variant = "in" | "out";
 
@@ -76,12 +77,16 @@ export function CheckScreen({
     mutationFn: () => {
       if (locState.status !== "ready")
         throw new Error("Location not available");
-      return submit(locState.lat, locState.lng, time.toISOString());
+      return submit(locState.lat, locState.lng, toLocalIsoDateTime(time));
     },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["employee-dashboard-overview"] });
-      qc.invalidateQueries({ queryKey: ["weekly-timesheet"] });
-      qc.invalidateQueries({ queryKey: ["employee-today-status"] });
+    onSuccess: async () => {
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: ["employee-dashboard-overview"] }),
+        qc.invalidateQueries({ queryKey: ["admin-my-today"] }),
+        qc.invalidateQueries({ queryKey: ["admin-dashboard-overview"] }),
+        qc.invalidateQueries({ queryKey: ["weekly-timesheet"] }),
+        qc.invalidateQueries({ queryKey: ["employee-today-status"] }),
+      ]);
       if (variant === "in") cancelPendingArrivalNotification();
       router.back();
     },

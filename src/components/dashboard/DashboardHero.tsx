@@ -3,12 +3,15 @@ import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import Feather from "@expo/vector-icons/Feather";
 import { colors } from "@/components/ui/theme";
 import { EnterShape } from "@/components/ui/EnterShape";
+import { Avatar } from "@/components/ui/Avatar";
 import type { PresenceStatus } from "./usePresence";
 
 export function DashboardHero({
   paddingTop,
   date,
   greeting,
+  subtitle,
+  avatar,
   statusLabel,
   statusColor,
   presence,
@@ -19,6 +22,13 @@ export function DashboardHero({
   paddingTop: number;
   date: string;
   greeting: string;
+  /** small line under the greeting, e.g. designation · code */
+  subtitle?: string;
+  avatar?: {
+    uri?: string | null;
+    firstName?: string | null;
+    lastName?: string | null;
+  };
   statusLabel?: string;
   statusColor?: string;
   presence: PresenceStatus;
@@ -46,9 +56,24 @@ export function DashboardHero({
       />
 
       <View style={s.header}>
+        {avatar && (
+          <View style={s.avatarRing}>
+            <Avatar
+              uri={avatar.uri}
+              firstName={avatar.firstName}
+              lastName={avatar.lastName}
+              size={52}
+            />
+          </View>
+        )}
         <View style={{ flex: 1 }}>
           <Text style={s.date}>{date}</Text>
           <Text style={s.greeting}>{greeting}</Text>
+          {subtitle ? (
+            <Text style={s.subtitle} numberOfLines={1}>
+              {subtitle}
+            </Text>
+          ) : null}
         </View>
         <TouchableOpacity
           onPress={onSettings}
@@ -149,6 +174,18 @@ const s = StyleSheet.create({
     opacity: 0.14,
   },
   header: { flexDirection: "row", alignItems: "flex-start", gap: 12 },
+  avatarRing: {
+    borderRadius: 30,
+    borderWidth: 2,
+    borderColor: "rgba(255,255,255,0.35)",
+    marginTop: 2,
+  },
+  subtitle: {
+    marginTop: 2,
+    fontSize: 13,
+    fontWeight: "500",
+    color: "rgba(255,255,255,0.75)",
+  },
   date: { fontSize: 13, fontWeight: "500", color: "rgba(255,255,255,0.68)" },
   greeting: {
     marginTop: 4,

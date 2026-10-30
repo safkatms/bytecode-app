@@ -23,6 +23,22 @@ export function parseLocalIsoDate(iso: string): Date {
   return new Date(`${iso.slice(0, 10)}T00:00:00`);
 }
 
+/** YYYY-MM-DDTHH:mm:ss (no Z, no offset) — local wall-clock time. */
+export function toLocalIsoDateTime(d: Date = new Date()): string {
+  return `${toLocalIsoDate(d)}T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+}
+
+/**
+ * Date whose local fields equal the wall-clock digits of a server timestamp.
+ * The server stores times exactly as sent, so any trailing Z/offset is ignored
+ * instead of being converted to the device timezone.
+ */
+export function parseWallClock(iso: string): Date {
+  const m = iso.match(/^(\d{4})-(\d{2})-(\d{2})(?:[T ](\d{2}):(\d{2})(?::(\d{2}))?)?/);
+  if (!m) return new Date(iso);
+  return new Date(+m[1], +m[2] - 1, +m[3], +(m[4] ?? 0), +(m[5] ?? 0), +(m[6] ?? 0));
+}
+
 /** Shift a YYYY-MM-DD date by whole days. */
 export function addDaysIso(iso: string, days: number): string {
   const d = parseLocalIsoDate(iso);

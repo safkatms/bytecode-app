@@ -27,6 +27,7 @@ export interface User {
     firstName: string | null;
     lastName: string | null;
     phone: string | null;
+    avatarUrl?: string | null;
     role: Role;
     isActive: boolean;
     mustChangePassword: boolean;
@@ -96,12 +97,21 @@ export interface Employee {
     isActive: boolean;
     createdAt: string;
     weekendDays: number[] | null;
+    fatherName?: string | null;
+    dateOfBirth?: string | null;
+    bloodGroup?: string | null;
+    officeEmail?: string | null;
+    emergencyContactNo?: string | null;
+    presentAddress?: string | null;
+    permanentAddress?: string | null;
+    primeBankAccountNo?: string | null;
     user: {
         id: number;
         firstName: string | null;
         lastName: string | null;
         email: string;
         phone: string | null;
+        avatarUrl?: string | null;
     };
 }
 
@@ -166,6 +176,7 @@ export interface TeamMember {
         firstName: string | null;
         lastName: string | null;
         email: string;
+        avatarUrl?: string | null;
     };
 }
 

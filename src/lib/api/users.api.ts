@@ -86,6 +86,19 @@ export async function getMe(): Promise<User> {
     return res.data.data!;
 }
 
+export async function uploadMyAvatar(
+    image: { uri: string; mimeType?: string },
+): Promise<{ avatarUrl: string }> {
+    const ext = image.uri.split('.').pop()?.toLowerCase();
+    const type = image.mimeType ?? (ext === 'png' ? 'image/png' : ext === 'webp' ? 'image/webp' : 'image/jpeg');
+    const form = new FormData();
+    form.append('file', { uri: image.uri, name: `avatar.${type.split('/')[1]}`, type } as any);
+    const res = await api.post<ApiResponse<{ avatarUrl: string }>>('/users/me/avatar', form, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return res.data.data!;
+}
+
 export async function updateMe(payload: UpdateProfilePayload): Promise<User> {
     const res = await api.patch<ApiResponse<User>>('/users/me', payload);
     return res.data.data!;

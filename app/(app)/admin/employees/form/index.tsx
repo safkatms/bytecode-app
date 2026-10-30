@@ -10,6 +10,7 @@ import {
   TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
+  Image,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useForm, Controller } from "react-hook-form";
@@ -20,6 +21,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Feather from "@expo/vector-icons/Feather";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import * as Contacts from "expo-contacts";
+import * as ImagePicker from "expo-image-picker";
 
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Spinner } from "@/components/ui/Spinner";
@@ -31,9 +33,11 @@ import {
   adminCreateEmployee,
   adminUpdateEmployee,
   adminGetEmployee,
+  adminUploadEmployeeAvatar,
 } from "@/lib/api/attendance.api";
 import { adminListActiveDepartments } from "@/lib/api/department.api";
 import type { Department } from "@/types/attendance";
+import { parseLocalIsoDate } from "@/lib/date";
 
 // ─── Helpers ──────────────────────────────────────────────────
 
@@ -61,26 +65,55 @@ const schema = z.object({
   designation: z.string().optional(),
   joiningDate: z.string().min(1, "Joining date is required"),
   weekendDays: z.array(z.number()).optional(),
+  fatherName: z.string().max(100).optional(),
+  dateOfBirth: z.string().optional(),
+  bloodGroup: z.string().max(5, "Max 5 characters").optional(),
+  officeEmail: z
+    .string()
+    .optional()
+    .refine((v) => !v || z.string().email().safeParse(v).success, {
+      message: "Enter a valid email",
+    }),
+  emergencyContactNo: z.string().max(30).optional(),
+  presentAddress: z.string().optional(),
+  permanentAddress: z.string().optional(),
+  primeBankAccountNo: z.string().max(50).optional(),
 });
 
 type FormData = z.infer<typeof schema>;
 
-// ─── Joining date field ───────────────────────────────────────
+// Backend validators reject empty strings, so blank optional fields are omitted
+function cleanPayload(data: FormData) {
+  return Object.fromEntries(
+    Object.entries(data).map(([k, v]) => [
+      k,
+      typeof v === "string" && v.trim() === "" ? undefined : v,
+    ]),
+  ) as FormData;
+}
 
-function JoiningDateField({
+// ─── Date field ───────────────────────────────────────────────
+
+function DateField({
   control,
   error,
+  name,
+  label,
+  pickerTitle,
 }: {
   control: any;
   error?: string;
+  name: string;
+  label: string;
+  pickerTitle: string;
 }) {
   const [active, setActive] = useState(false);
   return (
     <View style={s.field}>
-      <Text style={s.label}>JOINING DATE</Text>
+      <Text style={s.label}>{label}</Text>
       <Controller
         control={control}
-        name="joiningDate"
+        name={name}
         render={({ field: { onChange, value } }) => (
           <>
             <TouchableOpacity
@@ -112,7 +145,8 @@ function JoiningDateField({
               <DateTimePicker
                 mode="date"
                 display="default"
-                value={value ? new Date(value) : new Date()}
+                value={value ? parseLocalIsoDate(value) : new Date()}
+                maximumDate={name === "dateOfBirth" ? new Date() : undefined}
                 onChange={(_, date) => {
                   setActive(false);
                   if (date) onChange(fmt(date));
@@ -122,7 +156,7 @@ function JoiningDateField({
             {active && Platform.OS === "ios" && (
               <View style={s.iosPickerWrap}>
                 <View style={s.iosPickerHeader}>
-                  <Text style={s.iosPickerTitle}>Joining date</Text>
+                  <Text style={s.iosPickerTitle}>{pickerTitle}</Text>
                   <TouchableOpacity onPress={() => setActive(false)}>
                     <Text style={s.iosPickerDone}>Done</Text>
                   </TouchableOpacity>
@@ -130,7 +164,8 @@ function JoiningDateField({
                 <DateTimePicker
                   mode="date"
                   display="spinner"
-                  value={value ? new Date(value) : new Date()}
+                  value={value ? parseLocalIsoDate(value) : new Date()}
+                  maximumDate={name === "dateOfBirth" ? new Date() : undefined}
                   onChange={(_, date) => {
                     if (date) onChange(fmt(date));
                   }}
@@ -343,6 +378,26 @@ export default function AdminEmployeeFormScreen() {
     name: string;
   }>({ visible: false, password: "", name: "" });
 
+  const [newAvatar, setNewAvatar] = useState<{
+    uri: string;
+    mimeType?: string;
+  } | null>(null);
+
+  const pickAvatar = async () => {
+    const res = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ["images"],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.7,
+    });
+    if (!res.canceled && res.assets[0]) {
+      setNewAvatar({
+        uri: res.assets[0].uri,
+        mimeType: res.assets[0].mimeType ?? undefined,
+      });
+    }
+  };
+
   const { data: existing, isLoading: loadingExisting } = useQuery({
     queryKey: ["admin-employee", id],
     queryFn: () => adminGetEmployee(Number(id)),
@@ -373,6 +428,14 @@ export default function AdminEmployeeFormScreen() {
       designation: "",
       joiningDate: fmt(new Date()),
       weekendDays: [5, 6],
+      fatherName: "",
+      dateOfBirth: "",
+      bloodGroup: "",
+      officeEmail: "",
+      emergencyContactNo: "",
+      presentAddress: "",
+      permanentAddress: "",
+      primeBankAccountNo: "",
     },
   });
 
@@ -388,6 +451,14 @@ export default function AdminEmployeeFormScreen() {
         designation: existing.designation ?? "",
         joiningDate: existing.joiningDate.split("T")[0],
         weekendDays: existing.weekendDays ?? [5, 6],
+        fatherName: existing.fatherName ?? "",
+        dateOfBirth: existing.dateOfBirth?.split("T")[0] ?? "",
+        bloodGroup: existing.bloodGroup ?? "",
+        officeEmail: existing.officeEmail ?? "",
+        emergencyContactNo: existing.emergencyContactNo ?? "",
+        presentAddress: existing.presentAddress ?? "",
+        permanentAddress: existing.permanentAddress ?? "",
+        primeBankAccountNo: existing.primeBankAccountNo ?? "",
       });
     }
   }, [existing, isEdit, reset]);
@@ -412,8 +483,24 @@ export default function AdminEmployeeFormScreen() {
   };
 
   const createMut = useMutation({
-    mutationFn: (data: FormData) => adminCreateEmployee(data),
+    mutationFn: async (data: FormData) => {
+      const result = await adminCreateEmployee(data);
+      let avatarFailed = false;
+      if (newAvatar) {
+        try {
+          await adminUploadEmployeeAvatar(result.employee.id, newAvatar);
+        } catch {
+          avatarFailed = true;
+        }
+      }
+      return { ...result, avatarFailed };
+    },
     onSuccess: (result) => {
+      if (result.avatarFailed)
+        setError("root", {
+          message:
+            "Employee created, but the profile image failed to upload. Edit the employee to try again.",
+        });
       qc.invalidateQueries({ queryKey: ["admin-employees"] });
       setOtpModal({
         visible: true,
@@ -428,7 +515,11 @@ export default function AdminEmployeeFormScreen() {
   });
 
   const updateMut = useMutation({
-    mutationFn: (data: FormData) => adminUpdateEmployee(Number(id), data),
+    mutationFn: async (data: FormData) => {
+      const updated = await adminUpdateEmployee(Number(id), data);
+      if (newAvatar) await adminUploadEmployeeAvatar(Number(id), newAvatar);
+      return updated;
+    },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["admin-employees"] });
       qc.invalidateQueries({ queryKey: ["admin-employee", id] });
@@ -442,8 +533,9 @@ export default function AdminEmployeeFormScreen() {
 
   const isPending = createMut.isPending || updateMut.isPending;
   const onSubmit = (data: FormData) => {
-    if (isEdit) updateMut.mutate(data);
-    else createMut.mutate(data);
+    const payload = cleanPayload(data);
+    if (isEdit) updateMut.mutate(payload);
+    else createMut.mutate(payload);
   };
 
   if (isEdit && loadingExisting) {
@@ -480,6 +572,27 @@ export default function AdminEmployeeFormScreen() {
         {errors.root?.message && (
           <AlertUI message={errors.root.message} type="error" />
         )}
+
+        {/* Profile image */}
+        <TouchableOpacity
+          style={s.avatarPicker}
+          onPress={pickAvatar}
+          activeOpacity={0.8}
+        >
+          {newAvatar?.uri || existing?.user?.avatarUrl ? (
+            <Image
+              source={{ uri: newAvatar?.uri ?? existing?.user?.avatarUrl! }}
+              style={s.avatarImage}
+            />
+          ) : (
+            <Feather name="camera" size={26} color={colors.bytecode[500]} />
+          )}
+          <Text style={s.avatarPickerText}>
+            {newAvatar || existing?.user?.avatarUrl
+              ? "Change photo"
+              : "Add photo"}
+          </Text>
+        </TouchableOpacity>
 
         {/* Account details */}
         <View style={s.sectionLabel}>
@@ -596,8 +709,11 @@ export default function AdminEmployeeFormScreen() {
             name="designation"
             error={errors.designation?.message}
           />
-          <JoiningDateField
+          <DateField
             control={control}
+            name="joiningDate"
+            label="JOINING DATE"
+            pickerTitle="Joining date"
             error={errors.joiningDate?.message}
           />
           <Controller
@@ -606,6 +722,85 @@ export default function AdminEmployeeFormScreen() {
             render={({ field: { onChange, value } }) => (
               <WeekendDaysPicker value={value} onChange={onChange} />
             )}
+          />
+        </View>
+
+        {/* Personal details */}
+        <View style={s.sectionLabel}>
+          <Feather name="file-text" size={13} color={colors.bytecode[600]} />
+          <Text style={s.sectionLabelText}>Personal details</Text>
+        </View>
+        <View style={s.group}>
+          <InputField
+            label="FATHER'S NAME"
+            icon="user"
+            placeholder="Abdul Doe"
+            control={control}
+            name="fatherName"
+            error={errors.fatherName?.message}
+          />
+          <DateField
+            control={control}
+            name="dateOfBirth"
+            label="DATE OF BIRTH"
+            pickerTitle="Date of birth"
+            error={errors.dateOfBirth?.message}
+          />
+          <InputField
+            label="BLOOD GROUP"
+            icon="droplet"
+            placeholder="O+"
+            control={control}
+            name="bloodGroup"
+            error={errors.bloodGroup?.message}
+            autoCapitalize="characters"
+            maxLength={5}
+          />
+          <InputField
+            label="OFFICE EMAIL"
+            icon="mail"
+            placeholder="john@bytecode.com"
+            control={control}
+            name="officeEmail"
+            error={errors.officeEmail?.message}
+            keyboardType="email-address"
+            autoCapitalize="none"
+          />
+          <InputField
+            label="EMERGENCY CONTACT NO"
+            icon="phone-call"
+            placeholder="+8801800000000"
+            control={control}
+            name="emergencyContactNo"
+            error={errors.emergencyContactNo?.message}
+            keyboardType="phone-pad"
+          />
+          <InputField
+            label="PRESENT ADDRESS"
+            icon="map-pin"
+            placeholder="House, road, area"
+            control={control}
+            name="presentAddress"
+            error={errors.presentAddress?.message}
+            multiline
+          />
+          <InputField
+            label="PERMANENT ADDRESS"
+            icon="home"
+            placeholder="Village, district"
+            control={control}
+            name="permanentAddress"
+            error={errors.permanentAddress?.message}
+            multiline
+          />
+          <InputField
+            label="PRIME BANK ACCOUNT NO"
+            icon="credit-card"
+            placeholder="1234567890"
+            control={control}
+            name="primeBankAccountNo"
+            error={errors.primeBankAccountNo?.message}
+            keyboardType="number-pad"
           />
         </View>
 
@@ -653,6 +848,19 @@ const s = StyleSheet.create({
   },
 
   group: { gap: 14 },
+
+  avatarPicker: { alignItems: "center", gap: 8 },
+  avatarImage: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    backgroundColor: colors.bytecode[100],
+  },
+  avatarPickerText: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: colors.bytecode[600],
+  },
 
   field: { gap: 6 },
   label: {

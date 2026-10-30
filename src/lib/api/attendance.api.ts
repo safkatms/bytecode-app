@@ -88,6 +88,31 @@ export async function adminGetEmployee(id: number): Promise<Employee> {
     return res.data.data!;
 }
 
+export async function adminUploadEmployeeAvatar(
+    id: number,
+    image: { uri: string; mimeType?: string },
+): Promise<{ avatarUrl: string }> {
+    const ext = image.uri.split('.').pop()?.toLowerCase();
+    const type = image.mimeType ?? (ext === 'png' ? 'image/png' : ext === 'webp' ? 'image/webp' : 'image/jpeg');
+    const form = new FormData();
+    form.append('file', { uri: image.uri, name: `avatar.${type.split('/')[1]}`, type } as any);
+    const res = await api.post<ApiResponse<{ avatarUrl: string }>>(`/employees/${id}/avatar`, form, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return res.data.data!;
+}
+
+export interface EmployeePersonalPayload {
+    fatherName?: string;
+    dateOfBirth?: string;
+    bloodGroup?: string;
+    officeEmail?: string;
+    emergencyContactNo?: string;
+    presentAddress?: string;
+    permanentAddress?: string;
+    primeBankAccountNo?: string;
+}
+
 export async function adminCreateEmployee(payload: {
     firstName: string;
     lastName: string;
@@ -97,7 +122,8 @@ export async function adminCreateEmployee(payload: {
     departmentId?: number;
     designation?: string;
     joiningDate: string;
-}): Promise<{ employee: Employee; temporaryPassword: string }> {
+    weekendDays?: number[];
+} & EmployeePersonalPayload): Promise<{ employee: Employee; temporaryPassword: string }> {
     const res = await api.post<ApiResponse<{ employee: Employee; temporaryPassword: string }>>(
         '/employees',
         payload,
@@ -114,7 +140,8 @@ export async function adminUpdateEmployee(id: number, payload: Partial<{
     departmentId: number;
     designation: string;
     joiningDate: string;
-}>): Promise<Employee> {
+    weekendDays: number[];
+} & EmployeePersonalPayload>): Promise<Employee> {
     const res = await api.patch<ApiResponse<Employee>>(`/employees/${id}`, payload);
     return res.data.data!;
 }

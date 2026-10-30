@@ -38,6 +38,8 @@ import {
   toLocalIsoDate,
   parseLocalIsoDate,
   addDaysIso,
+  toLocalIsoDateTime,
+  parseWallClock,
 } from "@/lib/date";
 import { useOfficeGeofence } from "@/components/attendance/useOfficeGeofence";
 import {
@@ -49,7 +51,7 @@ import {
 
 function fmtTime(iso: string | null) {
   if (!iso) return "—";
-  return new Date(iso).toLocaleTimeString("en-US", {
+  return parseWallClock(iso).toLocaleTimeString("en-US", {
     hour: "2-digit",
     minute: "2-digit",
     hour12: true,
@@ -64,15 +66,15 @@ function fmtHours(h: number) {
   return `${hrs}h ${mins}m`;
 }
 
-/** Build ISO string: combine a YYYY-MM-DD date with a time from a Date object */
+/** Combine a YYYY-MM-DD date with a time from a Date object, as local time */
 function buildIso(date: string, time: Date): string {
-  const d = new Date(`${date}T00:00:00`);
+  const d = parseLocalIsoDate(date);
   d.setHours(time.getHours(), time.getMinutes(), 0, 0);
-  return d.toISOString();
+  return toLocalIsoDateTime(d);
 }
 
 function defaultTime(existingIso: string | null, fallbackHour: number): Date {
-  if (existingIso) return new Date(existingIso);
+  if (existingIso) return parseWallClock(existingIso);
   const d = new Date();
   d.setHours(fallbackHour, 0, 0, 0);
   return d;
@@ -92,7 +94,9 @@ function DayRow({
   const color = day.status
     ? (STATUS_COLOR[day.status] ?? colors.gray[400])
     : colors.gray[300];
-  const label = day.status ? (STATUS_LABEL[day.status] ?? day.status) : "No record";
+  const label = day.status
+    ? (STATUS_LABEL[day.status] ?? day.status)
+    : "No record";
   const isLeave =
     day.status === "holiday" ||
     day.status === "sick_leave" ||
@@ -127,9 +131,7 @@ function DayRow({
           { backgroundColor: isOff ? colors.gray[100] : `${color}18` },
         ]}
       >
-        <Text
-          style={[s.dateNum, { color: isOff ? colors.gray[400] : color }]}
-        >
+        <Text style={[s.dateNum, { color: isOff ? colors.gray[400] : color }]}>
           {dayNum}
         </Text>
         <Text
@@ -211,6 +213,7 @@ function EntrySheet({
   const qc = useQueryClient();
   const mode: EntryMode = day.checkInTime ? "checkOut" : "checkIn";
   const isIn = mode === "checkIn";
+  const done = !!day.checkInTime && !!day.checkOutTime;
 
   const [inTime, setInTime] = useState<Date>(defaultTime(day.checkInTime, 9));
   const [outTime, setOutTime] = useState<Date>(
@@ -230,8 +233,14 @@ function EntrySheet({
         ? checkIn(lat, lng, buildIso(day.date, inTime))
         : checkOut(lat, lng, buildIso(day.date, outTime));
     },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["weekly-timesheet"] });
+    onSuccess: async () => {
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: ["weekly-timesheet"] }),
+        qc.invalidateQueries({ queryKey: ["employee-dashboard-overview"] }),
+        qc.invalidateQueries({ queryKey: ["admin-my-today"] }),
+        qc.invalidateQueries({ queryKey: ["admin-dashboard-overview"] }),
+        qc.invalidateQueries({ queryKey: ["employee-today-status"] }),
+      ]);
       onSuccess();
     },
     onError: (err) =>
@@ -246,7 +255,11 @@ function EntrySheet({
   }
 
   const pickerValue =
-    activePicker === "in" ? inTime : activePicker === "out" ? outTime : new Date();
+    activePicker === "in"
+      ? inTime
+      : activePicker === "out"
+        ? outTime
+        : new Date();
 
   const dateDisplay = parseLocalIsoDate(day.date).toLocaleDateString("en-US", {
     weekday: "long",
@@ -271,18 +284,25 @@ function EntrySheet({
         <View
           style={[
             s.sheetIcon,
-            { backgroundColor: isIn ? colors.green[100] : colors.red[100] },
+            {
+              backgroundColor:
+                isIn || done ? colors.green[100] : colors.red[100],
+            },
           ]}
         >
           <Feather
-            name={isIn ? "log-in" : "log-out"}
+            name={done ? "check-circle" : isIn ? "log-in" : "log-out"}
             size={20}
-            color={isIn ? colors.green[600] : colors.red[600]}
+            color={isIn || done ? colors.green[600] : colors.red[600]}
           />
         </View>
         <View style={{ flex: 1 }}>
           <Text style={s.sheetTitle}>
-            {isIn ? "Log check-in" : "Log check-out"}
+            {done
+              ? "Attendance logged"
+              : isIn
+                ? "Log check-in"
+                : "Log check-out"}
           </Text>
           <Text style={s.sheetDate}>{dateDisplay}</Text>
         </View>
@@ -292,9 +312,7 @@ function EntrySheet({
       </View>
 
       <View style={s.sheetBody}>
-        {submitError ? (
-          <AlertUI message={submitError} type="error" />
-        ) : null}
+        {submitError ? <AlertUI message={submitError} type="error" /> : null}
 
         {/* Location */}
         <View style={s.locRow}>
@@ -337,7 +355,9 @@ function EntrySheet({
             <View
               style={[
                 s.timeIcon,
-                { backgroundColor: isIn ? colors.green[100] : colors.gray[100] },
+                {
+                  backgroundColor: isIn ? colors.green[100] : colors.gray[100],
+                },
               ]}
             >
               <Feather
@@ -383,7 +403,7 @@ function EntrySheet({
               />
             </View>
             <Text style={s.timeLabel}>Check-out</Text>
-            {!isIn ? (
+            {!isIn && !done ? (
               <TouchableOpacity
                 style={[s.timeBtn, { backgroundColor: colors.red[50] }]}
                 onPress={() => setActivePicker("out")}
@@ -392,51 +412,65 @@ function EntrySheet({
                 <Text style={[s.timeBtnText, { color: colors.red[700] }]}>
                   {fmtTimeDisplay(outTime)}
                 </Text>
-                <Feather name="chevron-down" size={13} color={colors.red[500]} />
+                <Feather
+                  name="chevron-down"
+                  size={13}
+                  color={colors.red[500]}
+                />
               </TouchableOpacity>
             ) : (
-              <Text style={s.timeExisting}>—</Text>
+              <Text style={s.timeExisting}>{fmtTime(day.checkOutTime)}</Text>
             )}
           </View>
         </View>
 
         {/* Submit */}
-        <TouchableOpacity
-          style={[
-            s.submitBtn,
-            (locState.status !== "ready" || mut.isPending) && s.submitBtnOff,
-          ]}
-          onPress={() => mut.mutate()}
-          disabled={locState.status !== "ready" || mut.isPending}
-          activeOpacity={0.9}
-        >
-          <View
+        {!done && (
+          <TouchableOpacity
             style={[
-              s.submitBase,
-              { backgroundColor: isIn ? colors.bytecode[600] : colors.red[600] },
+              s.submitBtn,
+              (locState.status !== "ready" || mut.isPending) && s.submitBtnOff,
             ]}
-          />
-          <View
-            style={[
-              s.submitAccent,
-              { backgroundColor: isIn ? colors.bytecode[400] : colors.red[400] },
-            ]}
-          />
-          {mut.isPending ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <>
-              <Feather
-                name={isIn ? "log-in" : "log-out"}
-                size={18}
-                color="#fff"
-              />
-              <Text style={s.submitText}>
-                {isIn ? "Submit check-in" : "Submit check-out"}
-              </Text>
-            </>
-          )}
-        </TouchableOpacity>
+            onPress={() => mut.mutate()}
+            disabled={locState.status !== "ready" || mut.isPending}
+            activeOpacity={0.9}
+          >
+            <View
+              style={[
+                s.submitBase,
+                {
+                  backgroundColor: isIn
+                    ? colors.bytecode[600]
+                    : colors.red[600],
+                },
+              ]}
+            />
+            <View
+              style={[
+                s.submitAccent,
+                {
+                  backgroundColor: isIn
+                    ? colors.bytecode[400]
+                    : colors.red[400],
+                },
+              ]}
+            />
+            {mut.isPending ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <>
+                <Feather
+                  name={isIn ? "log-in" : "log-out"}
+                  size={18}
+                  color="#fff"
+                />
+                <Text style={s.submitText}>
+                  {isIn ? "Submit check-in" : "Submit check-out"}
+                </Text>
+              </>
+            )}
+          </TouchableOpacity>
+        )}
       </View>
 
       {/* Android dialog */}
@@ -539,7 +573,10 @@ export default function TimesheetScreen() {
       />
 
       <ScrollView
-        contentContainerStyle={[s.content, { paddingBottom: insets.bottom + 32 }]}
+        contentContainerStyle={[
+          s.content,
+          { paddingBottom: insets.bottom + 32 },
+        ]}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
@@ -557,7 +594,11 @@ export default function TimesheetScreen() {
             hitSlop={8}
             activeOpacity={0.7}
           >
-            <Feather name="chevron-left" size={20} color={colors.bytecode[600]} />
+            <Feather
+              name="chevron-left"
+              size={20}
+              color={colors.bytecode[600]}
+            />
           </TouchableOpacity>
 
           <View style={s.weekCenter}>
@@ -596,7 +637,11 @@ export default function TimesheetScreen() {
             onPress={() => setRefDate(undefined)}
             activeOpacity={0.7}
           >
-            <Feather name="corner-up-left" size={13} color={colors.bytecode[600]} />
+            <Feather
+              name="corner-up-left"
+              size={13}
+              color={colors.bytecode[600]}
+            />
             <Text style={s.backToCurrentText}>Back to current week</Text>
           </TouchableOpacity>
         )}
@@ -636,9 +681,7 @@ export default function TimesheetScreen() {
               ].map((item, i, arr) => (
                 <React.Fragment key={item.label}>
                   <View style={s.summaryItem}>
-                    <View
-                      style={[s.summaryIcon, { backgroundColor: item.bg }]}
-                    >
+                    <View style={[s.summaryIcon, { backgroundColor: item.bg }]}>
                       <Feather name={item.icon} size={16} color={item.color} />
                     </View>
                     <Text style={s.summaryValue}>{item.value}</Text>
@@ -697,18 +740,19 @@ export default function TimesheetScreen() {
                 <View style={s.weekendStrip}>
                   <Feather name="moon" size={12} color={colors.gray[400]} />
                   <Text style={s.weekendLabel}>Weekend</Text>
-                  {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d, i) =>
-                    data.weekendDays.includes(i) ? (
-                      <View key={i} style={s.weekendPill}>
-                        <Text style={s.weekendPillText}>{d}</Text>
-                      </View>
-                    ) : null,
+                  {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map(
+                    (d, i) =>
+                      data.weekendDays.includes(i) ? (
+                        <View key={i} style={s.weekendPill}>
+                          <Text style={s.weekendPillText}>{d}</Text>
+                        </View>
+                      ) : null,
                   )}
                 </View>
               )}
               <Text style={s.legend}>
-                <Text style={s.legendBadge}>M</Text> marked by admin ·{" "}
-                tap a row with ✎ to log time
+                <Text style={s.legendBadge}>M</Text> marked by admin · tap a row
+                with ✎ to log time
               </Text>
             </View>
           </>
@@ -885,7 +929,11 @@ const s = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  manualDotText: { fontSize: 9, fontWeight: "900", color: colors.bytecode[600] },
+  manualDotText: {
+    fontSize: 9,
+    fontWeight: "900",
+    color: colors.bytecode[600],
+  },
 
   // footer
   footerMeta: { gap: 10, marginTop: 4 },
@@ -967,7 +1015,12 @@ const s = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 12,
   },
-  locText: { flex: 1, fontSize: 12.5, color: colors.gray[600], fontWeight: "500" },
+  locText: {
+    flex: 1,
+    fontSize: 12.5,
+    color: colors.gray[600],
+    fontWeight: "500",
+  },
   officeTag: { borderRadius: 20, paddingHorizontal: 9, paddingVertical: 4 },
   officeTagText: { fontSize: 11, fontWeight: "700" },
 

@@ -40,6 +40,12 @@
       ],
       "expo-notifications",
       [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow ByteCode to access your photos to set an employee profile image."
+        }
+      ],
+      [
         "expo-splash-screen",
         {
           "image": "./assets/bytecode.png",

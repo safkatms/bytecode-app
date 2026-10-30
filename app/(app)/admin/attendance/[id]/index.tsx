@@ -30,6 +30,7 @@ import {
   ATTENDANCE_STATUS_COLOR as STATUS_COLOR,
   ATTENDANCE_STATUS_LABEL as STATUS_LABEL,
 } from "@/lib/attendance-status";
+import { toLocalIsoDateTime, parseWallClock } from "@/lib/date";
 
 // ─── constants ───────────────────────────────────────────────────────────────
 
@@ -42,7 +43,7 @@ const AUTO_STATUS_COLOR = {
 
 function fmtTime(iso: string | null) {
   if (!iso) return "—";
-  return new Date(iso).toLocaleTimeString("en-US", {
+  return parseWallClock(iso).toLocaleTimeString("en-US", {
     hour: "2-digit",
     minute: "2-digit",
     hour12: true,
@@ -58,7 +59,7 @@ function fmtHours(h: number) {
 }
 
 function fmtDateLong(iso: string) {
-  return new Date(iso).toLocaleDateString("en-US", {
+  return parseWallClock(iso).toLocaleDateString("en-US", {
     weekday: "long",
     day: "numeric",
     month: "long",
@@ -96,9 +97,11 @@ export default function AdminAttendanceDetailScreen() {
 
   React.useEffect(() => {
     if (record) {
-      setCheckInDate(record.checkInTime ? new Date(record.checkInTime) : null);
+      setCheckInDate(
+        record.checkInTime ? parseWallClock(record.checkInTime) : null,
+      );
       setCheckOutDate(
-        record.checkOutTime ? new Date(record.checkOutTime) : null,
+        record.checkOutTime ? parseWallClock(record.checkOutTime) : null,
       );
       setNote(record.note ?? "");
     }
@@ -125,8 +128,8 @@ export default function AdminAttendanceDetailScreen() {
     mutationFn: () =>
       adminUpdateAttendance(Number(id), {
         status,
-        checkInTime: checkInDate?.toISOString(),
-        checkOutTime: checkOutDate?.toISOString(),
+        checkInTime: checkInDate ? toLocalIsoDateTime(checkInDate) : undefined,
+        checkOutTime: checkOutDate ? toLocalIsoDateTime(checkOutDate) : undefined,
         note: note.trim() || undefined,
         lateMinutes,
       }),
@@ -290,7 +293,7 @@ export default function AdminAttendanceDetailScreen() {
               >
                 <Feather name="log-in" size={15} color={colors.bytecode[600]} />
                 <Text style={[s.timeBtnText, { color: colors.bytecode[700] }]}>
-                  {checkInDate ? fmtTime(checkInDate.toISOString()) : "Not set"}
+                  {checkInDate ? fmtTime(toLocalIsoDateTime(checkInDate)) : "Not set"}
                 </Text>
                 <Feather
                   name="chevron-down"
@@ -320,7 +323,7 @@ export default function AdminAttendanceDetailScreen() {
                 <Feather name="log-out" size={15} color={colors.red[500]} />
                 <Text style={[s.timeBtnText, { color: colors.red[600] }]}>
                   {checkOutDate
-                    ? fmtTime(checkOutDate.toISOString())
+                    ? fmtTime(toLocalIsoDateTime(checkOutDate))
                     : "Not set"}
                 </Text>
                 <Feather

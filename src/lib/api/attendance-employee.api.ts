@@ -1,5 +1,7 @@
 import { api } from '@/lib/axios';
 import * as SecureStore from 'expo-secure-store';
+import * as Device from 'expo-device';
+import { Platform } from 'react-native';
 import type { ApiResponse, PaginatedResponse } from '@/types/api';
 import type {
     AttendanceRecord,
@@ -11,9 +13,18 @@ import type {
 
 const DEVICE_ID_KEY = 'app_device_id';
 
+function getDeviceName(): string {
+    const name =
+        Device.deviceName ??
+        Device.modelName ??
+        `${Platform.OS === 'ios' ? 'iOS' : 'Android'} Device`;
+    // HTTP header values must be plain ASCII
+    return name.replace(/[^\x20-\x7E]/g, '').trim() || 'Unknown Device';
+}
+
 async function deviceHeaders() {
     const deviceId = (await SecureStore.getItemAsync(DEVICE_ID_KEY)) ?? 'unknown';
-    return { 'X-Device-ID': deviceId };
+    return { 'X-Device-ID': deviceId, 'X-Device-Name': getDeviceName() };
 }
 
 export async function checkIn(latitude: number, longitude: number, checkInTime: string): Promise<AttendanceRecord> {

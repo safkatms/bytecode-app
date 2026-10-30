@@ -33,6 +33,8 @@ import { colors } from "@/components/ui/theme";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { AlertUI } from "@/components/ui/Alert";
 import { Spinner } from "@/components/ui/Spinner";
+import { Avatar } from "@/components/ui/Avatar";
+import { EmployeePickerModal } from "@/components/ui/EmployeePickerModal";
 import type { Employee, TeamMember } from "@/types/attendance";
 
 // ─── Schema ───────────────────────────────────────────────────
@@ -62,75 +64,59 @@ function EmployeePicker({
 }) {
   const [open, setOpen] = useState(false);
   const selected = employees.find((e) => e.id === value);
-  const selectedName = selected
-    ? `${selected.user.firstName ?? ""} ${selected.user.lastName ?? ""}`.trim()
-    : undefined;
 
   return (
     <View style={s.field}>
       <Text style={s.label}>{label}</Text>
       <TouchableOpacity
-        style={[s.inputRow, open && s.inputRowOpen, !!error && s.inputRowError]}
-        onPress={() => setOpen((p) => !p)}
+        style={[s.inputRow, !!error && s.inputRowError]}
+        onPress={() => setOpen(true)}
         activeOpacity={0.75}
       >
         <View style={s.inputPrefix}>
           <Feather name="user" size={14} color={colors.bytecode[500]} />
         </View>
-        <Text
-          style={[
-            s.textInput,
-            { lineHeight: 50 },
-            !selectedName && { color: colors.gray[400] },
-          ]}
-          numberOfLines={1}
-        >
-          {selectedName ?? "Select employee…"}
-        </Text>
+        {selected ? (
+          <View style={s.selectedEmp}>
+            <Avatar
+              uri={selected.user.avatarUrl}
+              firstName={selected.user.firstName}
+              lastName={selected.user.lastName}
+              size={32}
+            />
+            <View style={{ flex: 1 }}>
+              <Text style={s.selectedEmpName} numberOfLines={1}>
+                {`${selected.user.firstName ?? ""} ${selected.user.lastName ?? ""}`.trim() ||
+                  selected.employeeCode}
+              </Text>
+              <Text style={s.selectedEmpCode}>{selected.employeeCode}</Text>
+            </View>
+          </View>
+        ) : (
+          <Text
+            style={[s.textInput, { lineHeight: 50, color: colors.gray[400] }]}
+            numberOfLines={1}
+          >
+            Select employee…
+          </Text>
+        )}
         <View style={{ paddingRight: 12 }}>
-          <Feather
-            name={open ? "chevron-up" : "chevron-down"}
-            size={16}
-            color={colors.gray[400]}
-          />
+          <Feather name="chevron-down" size={16} color={colors.gray[400]} />
         </View>
       </TouchableOpacity>
-      {open && (
-        <View style={s.dropdownList}>
-          {employees.map((emp) => {
-            const name =
-              `${emp.user.firstName ?? ""} ${emp.user.lastName ?? ""}`.trim() ||
-              emp.employeeCode;
-            const isSelected = emp.id === value;
-            return (
-              <TouchableOpacity
-                key={emp.id}
-                style={[s.dropdownItem, isSelected && s.dropdownItemActive]}
-                onPress={() => {
-                  onChange(emp.id);
-                  setOpen(false);
-                }}
-              >
-                <View>
-                  <Text
-                    style={[
-                      s.dropdownItemText,
-                      isSelected && s.dropdownItemTextActive,
-                    ]}
-                  >
-                    {name}
-                  </Text>
-                  <Text style={s.dropdownItemSub}>{emp.employeeCode}</Text>
-                </View>
-                {isSelected && (
-                  <Feather name="check" size={14} color={colors.bytecode[600]} />
-                )}
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-      )}
       {error && <Text style={s.fieldError}>{error}</Text>}
+
+      <EmployeePickerModal
+        visible={open}
+        title="Select Team Leader"
+        employees={employees}
+        selectedId={value}
+        onSelect={(emp) => {
+          onChange(emp.id);
+          setOpen(false);
+        }}
+        onClose={() => setOpen(false)}
+      />
     </View>
   );
 }
@@ -151,11 +137,12 @@ function MemberRow({
     member.employeeCode;
   return (
     <View style={s.memberRow}>
-      <View style={s.memberAvatar}>
-        <Text style={s.memberAvatarText}>
-          {(member.user.firstName?.[0] ?? "") + (member.user.lastName?.[0] ?? "") || "?"}
-        </Text>
-      </View>
+      <Avatar
+        uri={member.user.avatarUrl}
+        firstName={member.user.firstName}
+        lastName={member.user.lastName}
+        size={36}
+      />
       <View style={s.memberInfo}>
         <Text style={s.memberName}>{name}</Text>
         <Text style={s.memberCode}>{member.employeeCode}</Text>
@@ -244,15 +231,27 @@ export default function AdminTeamFormScreen() {
       }),
   });
 
-  const addMemberMut = useMutation({
-    mutationFn: (employeeId: number) =>
-      adminAddTeamMember(Number(id), employeeId),
-    onSuccess: () => {
+  const addMembersMut = useMutation({
+    mutationFn: async (selected: Employee[]) => {
+      const failed: string[] = [];
+      for (const emp of selected) {
+        try {
+          await adminAddTeamMember(Number(id), emp.id);
+        } catch (err) {
+          failed.push(
+            `${emp.user.firstName ?? ""} ${emp.user.lastName ?? ""}`.trim() ||
+              emp.employeeCode,
+          );
+        }
+      }
+      return failed;
+    },
+    onSuccess: (failed) => {
       qc.invalidateQueries({ queryKey: ["admin-team", id] });
       setAddMemberOpen(false);
+      if (failed.length > 0)
+        Alert.alert("Some members were not added", failed.join(", "));
     },
-    onError: (err) =>
-      Alert.alert("Error", getApiErrorMessage(err, "Failed to add member")),
   });
 
   const removeMemberMut = useMutation({
@@ -457,53 +456,30 @@ export default function AdminTeamFormScreen() {
                 </View>
               )}
 
-              {/* Add member */}
-              {addMemberOpen ? (
-                <View style={s.addMemberPicker}>
-                  <View style={s.memberSep} />
-                  {availableToAdd.length === 0 ? (
-                    <Text style={s.emptyMembersText}>
-                      All employees are already members
-                    </Text>
-                  ) : (
-                    availableToAdd.slice(0, 50).map((emp, i) => {
-                      const name =
-                        `${emp.user.firstName ?? ""} ${emp.user.lastName ?? ""}`.trim() ||
-                        emp.employeeCode;
-                      return (
-                        <React.Fragment key={emp.id}>
-                          <TouchableOpacity
-                            style={s.addMemberItem}
-                            onPress={() => addMemberMut.mutate(emp.id)}
-                            disabled={addMemberMut.isPending}
-                          >
-                            <Text style={s.addMemberName}>{name}</Text>
-                            <Text style={s.addMemberCode}>{emp.employeeCode}</Text>
-                          </TouchableOpacity>
-                          {i < availableToAdd.length - 1 && (
-                            <View style={s.memberSep} />
-                          )}
-                        </React.Fragment>
-                      );
-                    })
-                  )}
-                </View>
-              ) : null}
             </View>
+
+            <EmployeePickerModal
+              visible={addMemberOpen}
+              title="Add Member"
+              employees={availableToAdd}
+              multiple
+              busy={addMembersMut.isPending}
+              confirmLabel={(n) => `Add ${n} member${n > 1 ? "s" : ""}`}
+              onConfirm={(emps) => addMembersMut.mutate(emps)}
+              onClose={() => setAddMemberOpen(false)}
+            />
 
             <TouchableOpacity
               style={s.addMemberBtn}
-              onPress={() => setAddMemberOpen((p) => !p)}
+              onPress={() => setAddMemberOpen(true)}
               activeOpacity={0.75}
             >
               <Feather
-                name={addMemberOpen ? "x" : "user-plus"}
+                name="user-plus"
                 size={14}
                 color={colors.bytecode[600]}
               />
-              <Text style={s.addMemberBtnText}>
-                {addMemberOpen ? "Cancel" : "Add member"}
-              </Text>
+              <Text style={s.addMemberBtnText}>Add member</Text>
             </TouchableOpacity>
           </>
         )}
@@ -549,7 +525,6 @@ const s = StyleSheet.create({
     overflow: "hidden",
   },
   inputRowMulti: { alignItems: "flex-start", minHeight: 90 },
-  inputRowOpen: { borderBottomLeftRadius: 0, borderBottomRightRadius: 0 },
   inputRowError: { borderColor: colors.red[400] },
   inputPrefix: {
     width: 44,
@@ -575,28 +550,16 @@ const s = StyleSheet.create({
   },
   fieldError: { fontSize: 12, color: colors.red[500] },
 
-  dropdownList: {
-    backgroundColor: "#fff",
-    borderWidth: 1.5,
-    borderTopWidth: 0,
-    borderColor: colors.bytecode[100],
-    borderBottomLeftRadius: 14,
-    borderBottomRightRadius: 14,
-    overflow: "hidden",
-  },
-  dropdownItem: {
+  selectedEmp: {
+    flex: 1,
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingVertical: 11,
-    borderTopWidth: 1,
-    borderTopColor: colors.gray[100],
+    gap: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
   },
-  dropdownItemActive: { backgroundColor: colors.bytecode[50] },
-  dropdownItemText: { fontSize: 14, color: colors.gray[700] },
-  dropdownItemTextActive: { fontWeight: "700", color: colors.bytecode[700] },
-  dropdownItemSub: { fontSize: 11, color: colors.gray[400], marginTop: 1 },
+  selectedEmpName: { fontSize: 14, fontWeight: "700", color: colors.gray[900] },
+  selectedEmpCode: { fontSize: 11, color: colors.gray[400], marginTop: 1 },
 
   switchRow: {
     flexDirection: "row",
@@ -626,19 +589,6 @@ const s = StyleSheet.create({
     paddingVertical: 12,
     gap: 10,
   },
-  memberAvatar: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: colors.bytecode[100],
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  memberAvatarText: {
-    fontSize: 12,
-    fontWeight: "800",
-    color: colors.bytecode[700],
-  },
   memberInfo: { flex: 1 },
   memberName: { fontSize: 14, fontWeight: "700", color: colors.gray[900] },
   memberCode: { fontSize: 11, color: colors.gray[400], marginTop: 1 },
@@ -664,14 +614,6 @@ const s = StyleSheet.create({
   },
   emptyMembers: { padding: 16, alignItems: "center" },
   emptyMembersText: { fontSize: 13, color: colors.gray[400] },
-
-  addMemberPicker: { paddingBottom: 4 },
-  addMemberItem: {
-    paddingHorizontal: 16,
-    paddingVertical: 11,
-  },
-  addMemberName: { fontSize: 14, color: colors.gray[800], fontWeight: "600" },
-  addMemberCode: { fontSize: 11, color: colors.gray[400], marginTop: 1 },
 
   addMemberBtn: {
     flexDirection: "row",
