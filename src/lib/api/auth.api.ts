@@ -3,6 +3,7 @@ import { useAuthStore } from '@/store/auth.store';
 import type { ApiResponse, TokenResponse } from '@/types/api';
 import type { User } from '@/types/attendance';
 import { queryClient } from '../query-client';
+import { unregisterFromPushNotifications } from '../notifications';
 export async function login(
     email: string,
     password: string,
@@ -18,6 +19,8 @@ export async function login(
 }
 
 export async function logout() {
+    // needs the auth token, so it must run before clearTokens()
+    await unregisterFromPushNotifications();
     try { await api.post('/auth/logout'); } finally {
         await clearTokens();
         queryClient.clear();

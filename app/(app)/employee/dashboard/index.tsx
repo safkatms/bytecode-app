@@ -12,6 +12,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { getEmployeeOverview } from "@/lib/api/dashboard-employee.api";
 import { useAuthStore } from "@/store/auth.store";
+import { useUnreadNotifications } from "@/hooks/useUnreadNotifications";
 import { Spinner } from "@/components/ui/Spinner";
 import { UpdateBanner } from "@/components/ui/UpdateBanner";
 import { AlertUI } from "@/components/ui/Alert";
@@ -48,7 +49,7 @@ const PERSONAL_ACTIONS = [
     path: "/(app)/leave/apply-sick",
   },
   {
-    icon: "umbrella" as const,
+    icon: "sun" as const,
     label: "Casual Leave",
     sub: "Apply for casual leave",
     bg: colors.green[100],
@@ -70,6 +71,7 @@ export default function EmployeeDashboardScreen() {
   const router = useRouter();
   const { user } = useAuthStore();
   const presence = usePresence();
+  const unread = useUnreadNotifications();
 
   const { data, isLoading, isError, error, refetch, isRefetching } = useQuery({
     queryKey: ["employee-dashboard-overview"],
@@ -137,6 +139,8 @@ export default function EmployeeDashboardScreen() {
         statusColor={statusColor}
         presence={presence}
         onSettings={() => router.push("/(app)/settings")}
+        onNotifications={() => router.push("/(app)/notifications")}
+        unreadCount={unread}
       />
 
       <FloatingCard

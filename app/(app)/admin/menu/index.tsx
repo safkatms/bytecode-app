@@ -2,7 +2,12 @@
 
 import React from "react";
 import {
-  View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert,
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+  Alert,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -52,7 +57,7 @@ const SECTIONS: { title: string; items: MenuItem[] }[] = [
     title: "ATTENDANCE",
     items: [
       {
-        icon: "calendar",
+        icon: "clock",
         label: "Attendance",
         sublabel: "View and manage attendance records",
         path: "/(app)/admin/attendance",
@@ -64,16 +69,22 @@ const SECTIONS: { title: string; items: MenuItem[] }[] = [
         path: "/(app)/admin/sick-leave",
       },
       {
-        icon: "umbrella",
+        icon: "sun",
         label: "Casual Leave",
         sublabel: "Review casual leave requests",
         path: "/(app)/admin/casual-leave",
       },
       {
-        icon: "sun",
+        icon: "calendar",
         label: "Holidays",
         sublabel: "Manage public and office holidays",
         path: "/(app)/admin/holidays",
+      },
+      {
+        icon: "volume-2",
+        label: "Announcements",
+        sublabel: "Send a notification to staff",
+        path: "/(app)/admin/announcements",
       },
       {
         icon: "bar-chart-2",
@@ -127,7 +138,10 @@ export default function AdminMenuScreen() {
     <View style={s.root}>
       <PageHeader title="Admin Menu" variant="bytecode" insetTop />
       <ScrollView
-        contentContainerStyle={[s.content, { paddingBottom: insets.bottom + 32 }]}
+        contentContainerStyle={[
+          s.content,
+          { paddingBottom: insets.bottom + 32 },
+        ]}
         showsVerticalScrollIndicator={false}
       >
         {SECTIONS.map((section) => {
@@ -141,7 +155,10 @@ export default function AdminMenuScreen() {
               <View style={s.card}>
                 {items.map((item, index) => (
                   <React.Fragment key={item.label}>
-                    <MenuRow item={item} onPress={() => router.push(item.path as any)} />
+                    <MenuRow
+                      item={item}
+                      onPress={() => router.push(item.path as any)}
+                    />
                     {index < items.length - 1 && <View style={s.separator} />}
                   </React.Fragment>
                 ))}

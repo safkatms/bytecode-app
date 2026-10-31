@@ -407,11 +407,7 @@ export default function AdminEmployeeDetailScreen() {
               }
             >
               <View style={s.actionIcon}>
-                <Feather
-                  name="umbrella"
-                  size={17}
-                  color={colors.bytecode[600]}
-                />
+                <Feather name="sun" size={17} color={colors.bytecode[600]} />
               </View>
               <Text style={s.actionLabel}>View Leave</Text>
               <Feather

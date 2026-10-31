@@ -16,6 +16,8 @@ export function DashboardHero({
   statusColor,
   presence,
   onSettings,
+  onNotifications,
+  unreadCount = 0,
   overlap = 44,
   children,
 }: {
@@ -33,6 +35,8 @@ export function DashboardHero({
   statusColor?: string;
   presence: PresenceStatus;
   onSettings: () => void;
+  onNotifications?: () => void;
+  unreadCount?: number;
   /** empty space at the bottom for a card that floats over the hero */
   overlap?: number;
   children?: React.ReactNode;
@@ -75,6 +79,23 @@ export function DashboardHero({
             </Text>
           ) : null}
         </View>
+        {onNotifications && (
+          <TouchableOpacity
+            onPress={onNotifications}
+            style={[s.actionButton, { marginRight: 8 }]}
+            hitSlop={8}
+            activeOpacity={0.8}
+          >
+            <Feather name="bell" size={18} color="rgba(255,255,255,0.95)" />
+            {unreadCount > 0 && (
+              <View style={s.bellBadge}>
+                <Text style={s.bellBadgeText}>
+                  {unreadCount > 9 ? "9+" : unreadCount}
+                </Text>
+              </View>
+            )}
+          </TouchableOpacity>
+        )}
         <TouchableOpacity
           onPress={onSettings}
           style={s.actionButton}
@@ -205,6 +226,21 @@ const s = StyleSheet.create({
     borderColor: "rgba(255,255,255,0.14)",
     marginTop: 4,
   },
+  bellBadge: {
+    position: "absolute",
+    top: -4,
+    right: -4,
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
+    paddingHorizontal: 4,
+    backgroundColor: "#EF4444",
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1.5,
+    borderColor: colors.bytecode[800],
+  },
+  bellBadgeText: { fontSize: 10, fontWeight: "700", color: "#fff" },
   badgeRow: { flexDirection: "row", alignItems: "center", gap: 10 },
   statusBadge: {
     flexDirection: "row",

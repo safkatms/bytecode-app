@@ -168,7 +168,10 @@ export default function AdminCasualLeaveScreen() {
       );
     },
     onError: (e) =>
-      Alert.alert("Error", getApiErrorMessage(e, "Failed to backfill earned leave")),
+      Alert.alert(
+        "Error",
+        getApiErrorMessage(e, "Failed to backfill earned leave"),
+      ),
   });
 
   function confirmBackfill() {
@@ -269,7 +272,7 @@ export default function AdminCasualLeaveScreen() {
           ItemSeparatorComponent={() => <View style={{ height: 8 }} />}
           ListEmptyComponent={
             <View style={s.empty}>
-              <Feather name="umbrella" size={36} color={colors.gray[300]} />
+              <Feather name="sun" size={36} color={colors.gray[300]} />
               <Text style={s.emptyText}>No requests</Text>
             </View>
           }

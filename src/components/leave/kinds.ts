@@ -39,5 +39,5 @@ export const LEAVE_KIND: Record<
   }
 > = {
   sick: { label: "Sick leave", icon: "thermometer", ...SickLeaveColor },
-  casual: { label: "Casual leave", icon: "umbrella", ...CasualLeaveColor },
+  casual: { label: "Casual leave", icon: "sun", ...CasualLeaveColor },
 };

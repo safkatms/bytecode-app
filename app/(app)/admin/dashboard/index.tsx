@@ -17,6 +17,7 @@ import {
 } from "@/lib/api/dashboard-admin.api";
 import { getEmployeeOverview } from "@/lib/api/dashboard-employee.api";
 import { useAuthStore } from "@/store/auth.store";
+import { useUnreadNotifications } from "@/hooks/useUnreadNotifications";
 import { Spinner } from "@/components/ui/Spinner";
 import { UpdateBanner } from "@/components/ui/UpdateBanner";
 import { AlertUI } from "@/components/ui/Alert";
@@ -59,7 +60,7 @@ const PERSONAL_ACTIONS = [
     path: "/(app)/leave/apply-sick",
   },
   {
-    icon: "umbrella" as const,
+    icon: "sun" as const,
     label: "Casual Leave",
     sub: "Apply for casual leave",
     bg: colors.red[50],
@@ -70,7 +71,7 @@ const PERSONAL_ACTIONS = [
 
 const ADMIN_ACTIONS = [
   {
-    icon: "calendar" as const,
+    icon: "clock" as const,
     label: "Attendance",
     bg: colors.bytecode[50],
     color: colors.bytecode[600],
@@ -84,14 +85,14 @@ const ADMIN_ACTIONS = [
     path: "/(app)/admin/sick-leave",
   },
   {
-    icon: "umbrella" as const,
+    icon: "sun" as const,
     label: "Casual Leave",
     bg: colors.red[50],
     color: colors.red[600],
     path: "/(app)/admin/casual-leave",
   },
   {
-    icon: "sun" as const,
+    icon: "calendar" as const,
     label: "Holidays",
     bg: colors.amber[50],
     color: colors.amber[600],
@@ -116,6 +117,7 @@ export default function AdminDashboardScreen() {
   const router = useRouter();
   const { user } = useAuthStore();
   const presence = usePresence();
+  const unread = useUnreadNotifications();
 
   const {
     data: overview,
@@ -210,6 +212,8 @@ export default function AdminDashboardScreen() {
         statusColor={colors.green[400]}
         presence={presence}
         onSettings={() => router.push("/(app)/settings")}
+        onNotifications={() => router.push("/(app)/notifications")}
+        unreadCount={unread}
       />
 
       <FloatingCard
