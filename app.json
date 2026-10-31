@@ -2,7 +2,7 @@
   "expo": {
     "name": "ByteCode App",
     "slug": "bytecode-expo",
-    "version": "26.10.4",
+    "version": "26.11.1",
     "orientation": "portrait",
     "scheme": "bytecode-expo",
     "platforms": ["ios", "android"],
