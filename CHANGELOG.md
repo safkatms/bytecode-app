@@ -1,5 +1,15 @@
 # Changelog
 
+## v26.11.1 - 2026-11-01
+
+### New
+
+- **Notifications:** in-app notification list with an unread count, and options to manage them.
+- **Profile photo:** upload an avatar, now shown across your profile.
+- **Office check-in reminders:** get a notification when you arrive at the office (geofencing) so you don't forget to check in.
+- **About screen:** shows the app version and support contact.
+- **Half-day casual leave:** mark casual leave as a half day.
+
 ## v26.10.4 - 2026-10-28
 
 ### New

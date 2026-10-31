@@ -16,7 +16,7 @@
     "android": {
       "icon": "./assets/bytecode.png",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/bytecode.png",
+        "foregroundImage": "./assets/adaptive-foreground.png",
         "backgroundColor": "#ffffff"
       },
       "package": "com.bytecode.app"
