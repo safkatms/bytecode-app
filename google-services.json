@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "741226551528",
+    "project_id": "bytecode-app-1",
+    "storage_bucket": "bytecode-app-1.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:741226551528:android:489c551fcf51965cfbd15d",
+        "android_client_info": {
+          "package_name": "com.bytecode.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDF2F5e1KhUuryI7znUBuxkgGY-XxJ4Wv8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

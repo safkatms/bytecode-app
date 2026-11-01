@@ -19,7 +19,8 @@
         "foregroundImage": "./assets/adaptive-foreground.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.bytecode.app"
+      "package": "com.bytecode.app",
+      "googleServicesFile": "./google-services.json"
     },
     "splash": {
       "image": "./assets/bytecode.png",
