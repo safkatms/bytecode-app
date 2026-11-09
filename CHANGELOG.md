@@ -1,5 +1,21 @@
 # Changelog
 
+## v26.11.2 - 2026-11-10
+
+### New
+
+- **Missed check-out reminder:** if you checked in but never checked out (any earlier day, or today after 7 PM), the dashboard asks you to log your check-out time.
+- **System settings (admin):** set the office arrival reminder time for everyone from the admin menu.
+
+### Changed
+
+- **Weekly timesheet** now runs Saturday to Friday.
+
+### Fixed
+
+- **Admin attendance:** marking or editing attendance for a past date no longer saves the check-in and check-out times on today's date.
+- **Office check-in reminders** now fire when the app is closed.
+
 ## v26.11.1 - 2026-11-01
 
 ### New
