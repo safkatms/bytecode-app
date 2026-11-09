@@ -240,6 +240,7 @@ function EntrySheet({
         qc.invalidateQueries({ queryKey: ["admin-my-today"] }),
         qc.invalidateQueries({ queryKey: ["admin-dashboard-overview"] }),
         qc.invalidateQueries({ queryKey: ["employee-today-status"] }),
+        qc.invalidateQueries({ queryKey: ["pending-checkout"] }),
       ]);
       onSuccess();
     },
@@ -516,11 +517,15 @@ export default function TimesheetScreen() {
   const params = useLocalSearchParams<{
     employeeId?: string;
     employeeName?: string;
+    date?: string; // open this day's entry sheet (used by the pending check-out prompt)
   }>();
   const adminEmpId = params.employeeId ? Number(params.employeeId) : null;
   const isAdminView = adminEmpId !== null;
 
-  const [refDate, setRefDate] = useState<string | undefined>(undefined);
+  const [refDate, setRefDate] = useState<string | undefined>(
+    params.date || undefined,
+  );
+  const autoOpenedRef = React.useRef(false);
   const [selectedDay, setSelectedDay] = useState<WeeklyTimesheetDay | null>(
     null,
   );
@@ -538,6 +543,15 @@ export default function TimesheetScreen() {
 
   const today = toLocalIsoDate();
   const isCurrentWeek = !data || data.weekEnd >= today;
+
+  React.useEffect(() => {
+    if (!params.date || autoOpenedRef.current || !data) return;
+    const target = data.days.find((d) => d.date === params.date);
+    if (target) {
+      autoOpenedRef.current = true;
+      setSelectedDay(target);
+    }
+  }, [data, params.date]);
 
   function prevWeek() {
     setRefDate(addDaysIso(data?.weekStart ?? today, -7));

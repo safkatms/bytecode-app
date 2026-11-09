@@ -4,11 +4,12 @@ import * as Notifications from "expo-notifications";
 import * as SecureStore from "expo-secure-store";
 import { getTodayStatus } from "@/lib/api/attendance-employee.api";
 import { getOfficeLocation } from "@/lib/api/location.api";
+import { getSettings } from "@/lib/api/settings.api";
 import { OFFICE_REMINDER_CHANNEL } from "@/lib/notifications";
 
 export const GEOFENCE_TASK = "office-arrival-geofence";
 
-const NOTIFY_HOUR = 10;
+const DEFAULT_NOTIFY_TIME = "10:00";
 const COOLDOWN_MS = 30 * 60 * 1000;
 
 const LAST_NOTIFIED_KEY = "office_reminder_last_notified_at";
@@ -28,9 +29,21 @@ const CHECK_IN_CONTENT = {
   channelId: OFFICE_REMINDER_CHANNEL,
 };
 
-function tenAmToday() {
+/** Admin-configured reminder time ("HH:mm"); falls back to the default if the API is unreachable. */
+async function getNotifyTime(): Promise<{ hour: number; minute: number }> {
+  let raw = DEFAULT_NOTIFY_TIME;
+  try {
+    raw = (await getSettings()).officeReminderTime || DEFAULT_NOTIFY_TIME;
+  } catch {
+    // keep default
+  }
+  const [hour, minute] = raw.split(":").map(Number);
+  return { hour, minute };
+}
+
+function notifyDateToday({ hour, minute }: { hour: number; minute: number }) {
   const d = new Date();
-  d.setHours(NOTIFY_HOUR, 0, 0, 0);
+  d.setHours(hour, minute, 0, 0);
   return d;
 }
 
@@ -56,13 +69,13 @@ export async function cancelPendingArrivalNotification() {
   }
 }
 
-async function scheduleTenAmNotification() {
+async function scheduleReminderNotification(at: Date) {
   await cancelPendingArrivalNotification();
   const id = await Notifications.scheduleNotificationAsync({
     content: CHECK_IN_CONTENT,
     trigger: {
       type: Notifications.SchedulableTriggerInputTypes.DATE,
-      date: tenAmToday(),
+      date: at,
     },
   });
   await SecureStore.setItemAsync(PENDING_NOTIFICATION_KEY, id);
@@ -77,13 +90,14 @@ export async function handleArrivalReminder(): Promise<string> {
   }
   if (await withinCooldown()) return "Skipped: within the 30-minute cooldown.";
 
-  const nowHour = new Date().getHours();
-  if (nowHour >= NOTIFY_HOUR) {
+  const notifyAt = notifyDateToday(await getNotifyTime());
+  const now = new Date();
+  if (now >= notifyAt) {
     await fireArrivalNotification();
     return "Fired notification immediately.";
   }
-  await scheduleTenAmNotification();
-  return `Scheduled for 10:00 (it is currently ${nowHour}:${String(new Date().getMinutes()).padStart(2, "0")}).`;
+  await scheduleReminderNotification(notifyAt);
+  return `Scheduled for ${notifyAt.getHours()}:${String(notifyAt.getMinutes()).padStart(2, "0")} (it is currently ${now.getHours()}:${String(now.getMinutes()).padStart(2, "0")}).`;
 }
 
 TaskManager.defineTask(GEOFENCE_TASK, async ({ data, error }) => {
@@ -99,8 +113,9 @@ TaskManager.defineTask(GEOFENCE_TASK, async ({ data, error }) => {
 
   try {
     await handleArrivalReminder();
-  } catch {
+  } catch (e) {
     // Background network/auth failure — the next ENTER event will retry.
+    console.warn("Office arrival reminder failed", e);
   }
 });
 

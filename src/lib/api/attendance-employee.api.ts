@@ -47,6 +47,16 @@ export async function checkOut(latitude: number, longitude: number, checkOutTime
     return res.data.data!;
 }
 
+export interface PendingCheckouts {
+    hasPending: boolean;
+    records: { id: number; attendanceDate: string; checkInTime: string | null }[];
+}
+
+export async function getPendingCheckouts(): Promise<PendingCheckouts> {
+    const res = await api.get<ApiResponse<PendingCheckouts>>('/attendance/me/pending-checkout');
+    return res.data.data!;
+}
+
 export async function getTodayStatus(): Promise<TodayStatus> {
     const res = await api.get<ApiResponse<TodayStatus>>('/attendance/me/today');
     return res.data.data!;

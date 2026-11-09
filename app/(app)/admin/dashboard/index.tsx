@@ -1,4 +1,5 @@
 import React from "react";
+import { PendingCheckoutPrompt } from "@/components/attendance/PendingCheckoutPrompt";
 import {
   View,
   Text,
@@ -191,6 +192,8 @@ export default function AdminDashboardScreen() {
   const canCheckOut = myDay && myDay.today.checkedIn && !myDay.today.checkedOut;
 
   return (
+    <>
+    <PendingCheckoutPrompt />
     <ScrollView
       style={styles.root}
       contentContainerStyle={{ paddingBottom: insets.bottom + 110 }}
@@ -379,6 +382,7 @@ export default function AdminDashboardScreen() {
         </Section>
       )}
     </ScrollView>
+    </>
   );
 }
 

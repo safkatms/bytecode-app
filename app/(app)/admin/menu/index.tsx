@@ -104,6 +104,12 @@ const SECTIONS: { title: string; items: MenuItem[] }[] = [
         path: "/(app)/admin/locations",
       },
       {
+        icon: "settings",
+        label: "System Settings",
+        sublabel: "Office arrival reminder time",
+        path: "/(app)/admin/settings",
+      },
+      {
         icon: "repeat",
         label: "Switch User",
         sublabel: "View the app as another user",
