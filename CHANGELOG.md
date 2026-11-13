@@ -1,5 +1,16 @@
 # Changelog
 
+## v26.11.3 - 2026-11-14
+
+### New
+
+- **Work timer:** after you check in, the dashboard shows a live countdown of the time left in your workday, with a progress bar.
+- **Admin dashboard switch:** admins now open on their own dashboard and can flip to the admin dashboard with a button beside the location status. Your choice is remembered until you switch back or log out.
+
+### Changed
+
+- **Late check-in** is now counted from 10:30 AM (Bangladesh time) for every kind of check-in, including attendance marked or edited by an admin. Status and late minutes are worked out automatically.
+
 ## v26.11.2 - 2026-11-10
 
 ### New
