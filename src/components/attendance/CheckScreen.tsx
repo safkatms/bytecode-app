@@ -100,7 +100,10 @@ export function CheckScreen({
       <PageHeader title={copy.title} variant="bytecode" insetTop />
 
       <ScrollView
-        contentContainerStyle={[s.content, { paddingBottom: insets.bottom + 28 }]}
+        contentContainerStyle={[
+          s.content,
+          { paddingBottom: insets.bottom + 10 },
+        ]}
         showsVerticalScrollIndicator={false}
       >
         {error ? <AlertUI message={error} type="error" /> : null}
@@ -190,7 +193,11 @@ export function CheckScreen({
 
         {locState.status === "ready" && isWithinRadius === false && (
           <View style={s.warning}>
-            <Feather name="alert-triangle" size={14} color={colors.amber[600]} />
+            <Feather
+              name="alert-triangle"
+              size={14}
+              color={colors.amber[600]}
+            />
             <Text style={s.warningText}>
               You&apos;re outside the office radius. The server will validate
               your location and may reject this.

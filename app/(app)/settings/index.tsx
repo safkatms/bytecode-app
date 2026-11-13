@@ -204,7 +204,7 @@ export default function SettingsScreen() {
       <ScrollView
         contentContainerStyle={[
           styles.content,
-          { paddingBottom: insets.bottom + 32 },
+          { paddingBottom: insets.bottom + 10 },
         ]}
         showsVerticalScrollIndicator={false}
       >

@@ -197,7 +197,7 @@ const styles = StyleSheet.create({
     padding: 24,
     gap: 24,
     justifyContent: "center",
-    paddingBottom: 40,
+    paddingBottom: 10,
   },
   header: { alignItems: "center", gap: 10 },
   iconWrap: {

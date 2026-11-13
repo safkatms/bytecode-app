@@ -8,6 +8,8 @@ interface AuthState {
   accessToken: string | null;
   originalAdmin: User | null;
   adminToken: string | null;
+  adminViewMode: 'me' | 'admin';
+  setAdminViewMode: (mode: 'me' | 'admin') => void;
   setAuthenticated: (val: boolean) => void;
   setLoading: (val: boolean) => void;
   setUser: (user: User | null) => void;
@@ -24,6 +26,8 @@ export const useAuthStore = create<AuthState>((set) => ({
   accessToken: null,
   originalAdmin: null,
   adminToken: null,
+  adminViewMode: 'me',
+  setAdminViewMode: (mode) => set({ adminViewMode: mode }),
   setAuthenticated: (val) => set({ isAuthenticated: val }),
   setLoading: (val) => set({ isLoading: val }),
   setUser: (user) => set({ user }),

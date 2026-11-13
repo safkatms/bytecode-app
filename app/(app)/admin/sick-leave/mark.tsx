@@ -2,8 +2,17 @@
 
 import React, { useEffect, useState } from "react";
 import {
-  View, Text, ScrollView, StyleSheet, TouchableOpacity,
-  TextInput, KeyboardAvoidingView, Platform, FlatList, Modal, Alert,
+  View,
+  Text,
+  ScrollView,
+  StyleSheet,
+  TouchableOpacity,
+  TextInput,
+  KeyboardAvoidingView,
+  Platform,
+  FlatList,
+  Modal,
+  Alert,
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -19,14 +28,19 @@ import { AlertUI } from "@/components/ui/Alert";
 import { Avatar } from "@/components/ui/Avatar";
 import type { Employee } from "@/types/attendance";
 
-function pad(n: number) { return String(n).padStart(2, "0"); }
+function pad(n: number) {
+  return String(n).padStart(2, "0");
+}
 function todayISO() {
   const d = new Date();
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }
 function fmtDateDisplay(iso: string) {
   return new Date(iso).toLocaleDateString("en-US", {
-    weekday: "short", day: "numeric", month: "short", year: "numeric",
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+    year: "numeric",
   });
 }
 
@@ -34,9 +48,11 @@ export default function AdminMarkSickLeaveScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const qc = useQueryClient();
-  const { employeeId: empIdParam, employeeName: empNameParam } = useLocalSearchParams<{
-    employeeId?: string; employeeName?: string;
-  }>();
+  const { employeeId: empIdParam, employeeName: empNameParam } =
+    useLocalSearchParams<{
+      employeeId?: string;
+      employeeName?: string;
+    }>();
 
   const [empPickerOpen, setEmpPickerOpen] = useState(false);
   const [selectedEmp, setSelectedEmp] = useState<Employee | null>(null);
@@ -61,21 +77,27 @@ export default function AdminMarkSickLeaveScreen() {
   const employees = (empData?.data ?? []).filter((e) => {
     if (!empSearch.trim()) return true;
     const q = empSearch.toLowerCase();
-    const name = `${e.user.firstName ?? ""} ${e.user.lastName ?? ""}`.toLowerCase();
+    const name =
+      `${e.user.firstName ?? ""} ${e.user.lastName ?? ""}`.toLowerCase();
     return name.includes(q) || e.employeeCode.toLowerCase().includes(q);
   });
 
   const markMut = useMutation({
     mutationFn: () => {
       if (!selectedEmp) throw new Error("Select an employee");
-      return adminMarkSickLeave({ employeeId: selectedEmp.id, date, note: note.trim() || undefined });
+      return adminMarkSickLeave({
+        employeeId: selectedEmp.id,
+        date,
+        note: note.trim() || undefined,
+      });
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["admin-sick-leave"] });
       Alert.alert("Done", "Sick leave marked successfully");
       router.back();
     },
-    onError: (e) => setError(getApiErrorMessage(e, "Failed to mark sick leave")),
+    onError: (e) =>
+      setError(getApiErrorMessage(e, "Failed to mark sick leave")),
   });
 
   return (
@@ -95,7 +117,10 @@ export default function AdminMarkSickLeaveScreen() {
       />
 
       <ScrollView
-        contentContainerStyle={[s.content, { paddingBottom: insets.bottom + 32 }]}
+        contentContainerStyle={[
+          s.content,
+          { paddingBottom: insets.bottom + 10 },
+        ]}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
@@ -126,7 +151,9 @@ export default function AdminMarkSickLeaveScreen() {
                     size={32}
                   />
                   <View>
-                    <Text style={s.empName}>{selectedEmp.user.firstName} {selectedEmp.user.lastName}</Text>
+                    <Text style={s.empName}>
+                      {selectedEmp.user.firstName} {selectedEmp.user.lastName}
+                    </Text>
                     <Text style={s.empSub}>{selectedEmp.employeeCode}</Text>
                   </View>
                 </View>
@@ -136,7 +163,11 @@ export default function AdminMarkSickLeaveScreen() {
                 <Text style={s.placeholder}>Select employee…</Text>
               )}
               <View style={{ paddingRight: 12 }}>
-                <Feather name="chevron-down" size={16} color={colors.gray[400]} />
+                <Feather
+                  name="chevron-down"
+                  size={16}
+                  color={colors.gray[400]}
+                />
               </View>
             </TouchableOpacity>
           </View>
@@ -149,9 +180,15 @@ export default function AdminMarkSickLeaveScreen() {
               activeOpacity={0.7}
             >
               <View style={s.inputPrefix}>
-                <Feather name="calendar" size={14} color={colors.bytecode[500]} />
+                <Feather
+                  name="calendar"
+                  size={14}
+                  color={colors.bytecode[500]}
+                />
               </View>
-              <Text style={[s.textInput, { lineHeight: 50 }]}>{fmtDateDisplay(date)}</Text>
+              <Text style={[s.textInput, { lineHeight: 50 }]}>
+                {fmtDateDisplay(date)}
+              </Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -165,8 +202,21 @@ export default function AdminMarkSickLeaveScreen() {
           <View style={s.field}>
             <Text style={s.label}>NOTE (OPTIONAL)</Text>
             <View style={[s.inputRow, { height: "auto" as any }]}>
-              <View style={[s.inputPrefix, { height: "auto" as any, paddingTop: 14, alignSelf: "flex-start" }]}>
-                <Feather name="message-square" size={14} color={colors.bytecode[500]} />
+              <View
+                style={[
+                  s.inputPrefix,
+                  {
+                    height: "auto" as any,
+                    paddingTop: 14,
+                    alignSelf: "flex-start",
+                  },
+                ]}
+              >
+                <Feather
+                  name="message-square"
+                  size={14}
+                  color={colors.bytecode[500]}
+                />
               </View>
               <TextInput
                 style={[s.textInput, s.textarea]}
@@ -192,20 +242,30 @@ export default function AdminMarkSickLeaveScreen() {
           maximumDate={new Date()}
           onChange={(_, d) => {
             setShowDatePicker(false);
-            if (d) setDate(`${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`);
+            if (d)
+              setDate(
+                `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`,
+              );
           }}
         />
       )}
 
       {/* iOS bottom-sheet date picker */}
       {Platform.OS === "ios" && (
-        <Modal transparent animationType="slide" visible={showDatePicker}
-          onRequestClose={() => setShowDatePicker(false)}>
+        <Modal
+          transparent
+          animationType="slide"
+          visible={showDatePicker}
+          onRequestClose={() => setShowDatePicker(false)}
+        >
           <View style={s.iosOverlay}>
             <View style={s.iosSheet}>
               <View style={s.iosSheetHeader}>
                 <Text style={s.iosSheetTitle}>Select Date</Text>
-                <TouchableOpacity onPress={() => setShowDatePicker(false)} hitSlop={8}>
+                <TouchableOpacity
+                  onPress={() => setShowDatePicker(false)}
+                  hitSlop={8}
+                >
                   <Text style={s.iosDone}>Done</Text>
                 </TouchableOpacity>
               </View>
@@ -215,7 +275,10 @@ export default function AdminMarkSickLeaveScreen() {
                 display="spinner"
                 maximumDate={new Date()}
                 onChange={(_, d) => {
-                  if (d) setDate(`${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`);
+                  if (d)
+                    setDate(
+                      `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`,
+                    );
                 }}
                 themeVariant="light"
                 style={{ width: "100%" }}
@@ -226,12 +289,24 @@ export default function AdminMarkSickLeaveScreen() {
       )}
 
       {/* Employee picker modal */}
-      <Modal visible={empPickerOpen} animationType="slide"
-        onRequestClose={() => { setEmpPickerOpen(false); setEmpSearch(""); }}>
+      <Modal
+        visible={empPickerOpen}
+        animationType="slide"
+        onRequestClose={() => {
+          setEmpPickerOpen(false);
+          setEmpSearch("");
+        }}
+      >
         <View style={[s.empModal, { paddingTop: insets.top }]}>
           <View style={s.empModalHeader}>
             <Text style={s.empModalTitle}>Select Employee</Text>
-            <TouchableOpacity onPress={() => { setEmpPickerOpen(false); setEmpSearch(""); }} hitSlop={8}>
+            <TouchableOpacity
+              onPress={() => {
+                setEmpPickerOpen(false);
+                setEmpSearch("");
+              }}
+              hitSlop={8}
+            >
               <Feather name="x" size={22} color={colors.gray[700]} />
             </TouchableOpacity>
           </View>
@@ -251,11 +326,17 @@ export default function AdminMarkSickLeaveScreen() {
             keyExtractor={(e) => String(e.id)}
             contentContainerStyle={s.empList}
             keyboardShouldPersistTaps="handled"
-            ItemSeparatorComponent={() => <View style={{ height: 1, backgroundColor: colors.gray[50] }} />}
+            ItemSeparatorComponent={() => (
+              <View style={{ height: 1, backgroundColor: colors.gray[50] }} />
+            )}
             renderItem={({ item }) => (
               <TouchableOpacity
                 style={s.empItem}
-                onPress={() => { setSelectedEmp(item); setEmpPickerOpen(false); setEmpSearch(""); }}
+                onPress={() => {
+                  setSelectedEmp(item);
+                  setEmpPickerOpen(false);
+                  setEmpSearch("");
+                }}
                 activeOpacity={0.8}
               >
                 <Avatar
@@ -265,11 +346,17 @@ export default function AdminMarkSickLeaveScreen() {
                   size={38}
                 />
                 <View style={{ flex: 1 }}>
-                  <Text style={s.empItemName}>{item.user.firstName} {item.user.lastName}</Text>
+                  <Text style={s.empItemName}>
+                    {item.user.firstName} {item.user.lastName}
+                  </Text>
                   <Text style={s.empItemSub}>{item.employeeCode}</Text>
                 </View>
                 {selectedEmp?.id === item.id && (
-                  <Feather name="check" size={16} color={colors.bytecode[600]} />
+                  <Feather
+                    name="check"
+                    size={16}
+                    color={colors.bytecode[600]}
+                  />
                 )}
               </TouchableOpacity>
             )}
@@ -289,53 +376,130 @@ const s = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.gray[50] },
   content: { padding: 16, gap: 20 },
 
-  sectionLabel: { flexDirection: "row", alignItems: "center", gap: 6, paddingLeft: 2 },
-  sectionLabelText: { fontSize: 13, fontWeight: "700", color: colors.bytecode[700] },
+  sectionLabel: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingLeft: 2,
+  },
+  sectionLabelText: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: colors.bytecode[700],
+  },
 
   group: { gap: 14 },
   field: { gap: 6 },
-  label: { fontSize: 10, fontWeight: "800", color: colors.gray[400], letterSpacing: 1 },
+  label: {
+    fontSize: 10,
+    fontWeight: "800",
+    color: colors.gray[400],
+    letterSpacing: 1,
+  },
 
   inputRow: {
-    flexDirection: "row", alignItems: "center", backgroundColor: "#fff",
-    borderWidth: 1.5, borderColor: colors.bytecode[100], borderRadius: 14, overflow: "hidden",
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#fff",
+    borderWidth: 1.5,
+    borderColor: colors.bytecode[100],
+    borderRadius: 14,
+    overflow: "hidden",
   },
   inputPrefix: {
-    width: 44, height: 50, alignItems: "center", justifyContent: "center",
-    borderRightWidth: 1, borderRightColor: colors.bytecode[50],
+    width: 44,
+    height: 50,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRightWidth: 1,
+    borderRightColor: colors.bytecode[50],
   },
-  textInput: { flex: 1, height: 50, paddingHorizontal: 12, fontSize: 15, color: colors.gray[900] },
-  textarea: { height: undefined, minHeight: 90, paddingTop: 14, paddingBottom: 14 },
-  placeholder: { flex: 1, height: 50, lineHeight: 50, paddingHorizontal: 12, fontSize: 15, color: colors.gray[400] },
+  textInput: {
+    flex: 1,
+    height: 50,
+    paddingHorizontal: 12,
+    fontSize: 15,
+    color: colors.gray[900],
+  },
+  textarea: {
+    height: undefined,
+    minHeight: 90,
+    paddingTop: 14,
+    paddingBottom: 10,
+  },
+  placeholder: {
+    flex: 1,
+    height: 50,
+    lineHeight: 50,
+    paddingHorizontal: 12,
+    fontSize: 15,
+    color: colors.gray[400],
+  },
 
-  empSelectedInner: { flex: 1, flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 12, paddingVertical: 8 },
+  empSelectedInner: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
   empName: { fontSize: 14, fontWeight: "700", color: colors.gray[900] },
   empSub: { fontSize: 11, color: colors.gray[400], marginTop: 1 },
 
-  iosOverlay: { flex: 1, justifyContent: "flex-end", backgroundColor: "rgba(0,0,0,0.3)" },
-  iosSheet: { backgroundColor: "#fff", borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingBottom: 32 },
+  iosOverlay: {
+    flex: 1,
+    justifyContent: "flex-end",
+    backgroundColor: "rgba(0,0,0,0.3)",
+  },
+  iosSheet: {
+    backgroundColor: "#fff",
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingBottom: 10,
+  },
   iosSheetHeader: {
-    flexDirection: "row", alignItems: "center", justifyContent: "space-between",
-    padding: 18, borderBottomWidth: 1, borderBottomColor: colors.gray[100],
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: 18,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.gray[100],
   },
   iosSheetTitle: { fontSize: 16, fontWeight: "800", color: colors.gray[900] },
   iosDone: { fontSize: 15, fontWeight: "700", color: colors.bytecode[600] },
 
   empModal: { flex: 1, backgroundColor: "#fff" },
   empModalHeader: {
-    flexDirection: "row", alignItems: "center", justifyContent: "space-between",
-    paddingHorizontal: 16, paddingVertical: 14,
-    borderBottomWidth: 1, borderBottomColor: colors.gray[100],
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.gray[100],
   },
   empModalTitle: { fontSize: 18, fontWeight: "800", color: colors.gray[900] },
   empSearchBox: {
-    flexDirection: "row", alignItems: "center", gap: 10,
-    margin: 16, backgroundColor: colors.gray[50], borderRadius: 12,
-    borderWidth: 1, borderColor: colors.gray[200], paddingHorizontal: 12, paddingVertical: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    margin: 16,
+    backgroundColor: colors.gray[50],
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.gray[200],
+    paddingHorizontal: 12,
+    paddingVertical: 10,
   },
   empSearchInput: { flex: 1, fontSize: 14, color: colors.gray[900] },
-  empList: { paddingHorizontal: 16, paddingBottom: 40 },
-  empItem: { flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 13 },
+  empList: { paddingHorizontal: 16, paddingBottom: 10 },
+  empItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    paddingVertical: 13,
+  },
   empItemName: { fontSize: 14, fontWeight: "700", color: colors.gray[900] },
   empItemSub: { fontSize: 11, color: colors.gray[400], marginTop: 1 },
   empEmpty: { alignItems: "center", paddingTop: 48 },

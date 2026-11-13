@@ -138,7 +138,9 @@ export default function AdminMarkAttendanceScreen() {
         attendanceDate: date,
         status,
         checkInTime: checkInDate ? toLocalIsoDateTime(checkInDate) : undefined,
-        checkOutTime: checkOutDate ? toLocalIsoDateTime(checkOutDate) : undefined,
+        checkOutTime: checkOutDate
+          ? toLocalIsoDateTime(checkOutDate)
+          : undefined,
         lateMinutes,
         note: note.trim() || undefined,
       });
@@ -190,7 +192,7 @@ export default function AdminMarkAttendanceScreen() {
       <ScrollView
         contentContainerStyle={[
           s.content,
-          { paddingBottom: insets.bottom + 32 },
+          { paddingBottom: insets.bottom + 10 },
         ]}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
@@ -358,9 +360,22 @@ export default function AdminMarkAttendanceScreen() {
             <Text style={s.label}>STATUS (AUTO)</Text>
             <View style={s.inputRow}>
               <View style={s.inputPrefix}>
-                <Feather name="activity" size={14} color={STATUS_COLOR[status as "present" | "late"]} />
+                <Feather
+                  name="activity"
+                  size={14}
+                  color={STATUS_COLOR[status as "present" | "late"]}
+                />
               </View>
-              <Text style={[s.textInput, { lineHeight: 50, color: STATUS_COLOR[status as "present" | "late"], fontWeight: "700" }]}>
+              <Text
+                style={[
+                  s.textInput,
+                  {
+                    lineHeight: 50,
+                    color: STATUS_COLOR[status as "present" | "late"],
+                    fontWeight: "700",
+                  },
+                ]}
+              >
                 {status === "late" ? "Late" : "Present"}
               </Text>
               {checkInDate && lateMinutes > 0 && (
@@ -370,8 +385,17 @@ export default function AdminMarkAttendanceScreen() {
                 </View>
               )}
               {checkInDate && lateMinutes === 0 && (
-                <View style={[s.latePill, { backgroundColor: `${colors.bytecode[500]}18` }]}>
-                  <Text style={[s.latePillText, { color: colors.bytecode[600] }]}>On time</Text>
+                <View
+                  style={[
+                    s.latePill,
+                    { backgroundColor: `${colors.bytecode[500]}18` },
+                  ]}
+                >
+                  <Text
+                    style={[s.latePillText, { color: colors.bytecode[600] }]}
+                  >
+                    On time
+                  </Text>
                 </View>
               )}
             </View>
@@ -609,7 +633,7 @@ const s = StyleSheet.create({
     height: undefined,
     minHeight: 90,
     paddingTop: 14,
-    paddingBottom: 14,
+    paddingBottom: 10,
   },
   placeholder: {
     flex: 1,
@@ -720,7 +744,7 @@ const s = StyleSheet.create({
     paddingVertical: 10,
   },
   empSearchInput: { flex: 1, fontSize: 14, color: colors.gray[900] },
-  empList: { paddingHorizontal: 16, paddingBottom: 40 },
+  empList: { paddingHorizontal: 16, paddingBottom: 10 },
   empItem: {
     flexDirection: "row",
     alignItems: "center",

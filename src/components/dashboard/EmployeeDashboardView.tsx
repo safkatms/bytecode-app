@@ -1,0 +1,306 @@
+import React from "react";
+import { PendingCheckoutPrompt } from "@/components/attendance/PendingCheckoutPrompt";
+import {
+  View,
+  Text,
+  ScrollView,
+  StyleSheet,
+  TouchableOpacity,
+  RefreshControl,
+} from "react-native";
+import { useQuery } from "@tanstack/react-query";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useRouter } from "expo-router";
+import { getEmployeeOverview } from "@/lib/api/dashboard-employee.api";
+import { useAuthStore } from "@/store/auth.store";
+import { useUnreadNotifications } from "@/hooks/useUnreadNotifications";
+import { Spinner } from "@/components/ui/Spinner";
+import { UpdateBanner } from "@/components/ui/UpdateBanner";
+import { AlertUI } from "@/components/ui/Alert";
+import { getApiErrorMessage } from "@/lib/api-error";
+import { colors } from "@/components/ui/theme";
+import {
+  ATTENDANCE_STATUS_COLOR as STATUS_COLOR,
+  ATTENDANCE_STATUS_LABEL as STATUS_LABEL,
+} from "@/lib/attendance-status";
+import { usePresence } from "./usePresence";
+import { DashboardHero } from "./DashboardHero";
+import { FloatingCard } from "./FloatingCard";
+import { CheckInCta } from "./CheckInCta";
+import { Section } from "./Section";
+import { StatsGrid, STAT_PALETTE } from "./StatsGrid";
+import { QuickActions } from "./QuickActions";
+import { WorkdayTimer } from "./WorkdayTimer";
+import { InfoCard } from "./rows";
+import {
+  fmtClockTime,
+  fmtWorkHours,
+  fmtLongDate,
+  fmtShortDate,
+  fmtMonth,
+} from "./format";
+
+const PERSONAL_ACTIONS = [
+  {
+    icon: "thermometer" as const,
+    label: "Sick Leave",
+    sub: "Apply for sick leave",
+    bg: colors.pink[50],
+    color: colors.pink[600],
+    path: "/(app)/leave/apply-sick",
+  },
+  {
+    icon: "sun" as const,
+    label: "Casual Leave",
+    sub: "Apply for casual leave",
+    bg: colors.red[100],
+    color: colors.red[600],
+    path: "/(app)/leave/apply-casual",
+  },
+  {
+    icon: "clock" as const,
+    label: "Timesheet",
+    sub: "View your timesheet",
+    bg: colors.bytecode[50],
+    color: colors.bytecode[600],
+    path: "/(app)/attendance/timesheet",
+  },
+];
+
+export function EmployeeDashboardView({
+  badgeExtra,
+}: {
+  badgeExtra?: React.ReactNode;
+}) {
+  const insets = useSafeAreaInsets();
+  const router = useRouter();
+  const { user } = useAuthStore();
+  const presence = usePresence();
+  const unread = useUnreadNotifications();
+
+  const { data, isLoading, isError, error, refetch, isRefetching } = useQuery({
+    queryKey: ["employee-dashboard-overview"],
+    queryFn: getEmployeeOverview,
+  });
+
+  if (isLoading)
+    return (
+      <View style={styles.center}>
+        <Spinner />
+      </View>
+    );
+
+  if (isError || !data) {
+    return (
+      <View style={[styles.center, { padding: 24 }]}>
+        {badgeExtra ? (
+          <View
+            style={{
+              marginBottom: 16,
+              padding: 6,
+              borderRadius: 24,
+              backgroundColor: colors.bytecode[800],
+            }}
+          >
+            {badgeExtra}
+          </View>
+        ) : null}
+        <AlertUI
+          message={getApiErrorMessage(error, "Failed to load dashboard")}
+          type="error"
+        />
+        <TouchableOpacity style={styles.retryButton} onPress={() => refetch()}>
+          <Text style={styles.retryLabel}>Retry</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  const { today, thisMonth } = data;
+  const statusColor = today.status
+    ? (STATUS_COLOR[today.status as keyof typeof STATUS_COLOR] ??
+      colors.gray[400])
+    : colors.gray[400];
+  const statusLabel = today.status
+    ? (STATUS_LABEL[today.status as keyof typeof STATUS_LABEL] ?? today.status)
+    : today.checkedIn
+      ? "Checked in"
+      : "Not checked in";
+
+  const canCheckIn =
+    !today.checkedIn &&
+    today.status !== "sick_leave" &&
+    today.status !== "casual_leave" &&
+    today.status !== "holiday";
+  const canCheckOut = today.checkedIn && !today.checkedOut;
+
+  return (
+    <>
+      <PendingCheckoutPrompt />
+      <ScrollView
+        style={styles.root}
+        contentContainerStyle={{ paddingBottom: insets.bottom + 10 }}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={isRefetching} onRefresh={refetch} />
+        }
+      >
+        <DashboardHero
+          paddingTop={insets.top + 14}
+          date={fmtLongDate()}
+          greeting={user?.lastName ? `Hi, ${user.lastName}` : "My Attendance"}
+          avatar={{
+            uri: data.profile?.avatarUrl ?? user?.avatarUrl,
+            firstName: user?.firstName,
+            lastName: user?.lastName,
+          }}
+          statusLabel={statusLabel}
+          statusColor={statusColor}
+          presence={presence}
+          onSettings={() => router.push("/(app)/settings")}
+          onNotifications={() => router.push("/(app)/notifications")}
+          unreadCount={unread}
+          badgeExtra={badgeExtra}
+        />
+
+        <FloatingCard
+          title="Today's attendance"
+          pillText={fmtShortDate()}
+          metrics={[
+            {
+              key: "in",
+              // icon: "log-in",
+              iconBg: colors.green[100],
+              iconColor: colors.green[600],
+              label: "Check-in",
+              value: fmtClockTime(today.checkInTime),
+              sub: today.checkInTime ? "Checked in" : "Not checked in",
+            },
+            {
+              key: "out",
+              // icon: "log-out",
+              iconBg: colors.red[100],
+              iconColor: colors.red[600],
+              label: "Check-out",
+              value: fmtClockTime(today.checkOutTime),
+              sub: today.checkOutTime ? "Checked out" : "Not checked out",
+            },
+            {
+              key: "hours",
+              // icon: "clock",
+              iconBg: colors.bytecode[50],
+              iconColor: colors.bytecode[600],
+              label: "Working hours",
+              value: fmtWorkHours(
+                today.workHours != null ? Number(today.workHours) : null,
+              ),
+              sub: "Total for today",
+              emphasize: true,
+            },
+          ]}
+        />
+
+        {canCheckOut && today.checkInTime && (
+          <WorkdayTimer checkInTime={today.checkInTime} />
+        )}
+
+        <UpdateBanner />
+
+        {canCheckIn && (
+          <CheckInCta
+            variant="in"
+            onPress={() => router.push("/(app)/attendance/check-in")}
+          />
+        )}
+        {canCheckOut && (
+          <CheckInCta
+            variant="out"
+            onPress={() => router.push("/(app)/attendance/check-out")}
+          />
+        )}
+
+        <Section title="This month" pillIcon="calendar" pillText={fmtMonth()}>
+          <StatsGrid
+            items={[
+              {
+                label: "Present",
+                value: thisMonth.present,
+                icon: "users",
+                ...STAT_PALETTE.present,
+              },
+              {
+                label: "Late",
+                value: thisMonth.late,
+                icon: "clock",
+                ...STAT_PALETTE.late,
+              },
+              {
+                label: "On Leave",
+                value: thisMonth.onLeave,
+                icon: "sun",
+                ...STAT_PALETTE.leave,
+              },
+            ]}
+          />
+        </Section>
+
+        <Section title="Quick actions">
+          <QuickActions
+            items={PERSONAL_ACTIONS}
+            onPress={(path) => router.push(path as any)}
+          />
+        </Section>
+
+        {data.devices.length > 0 && (
+          <Section
+            title="Trusted devices"
+            pillIcon="shield"
+            pillText={`${data.devices.length} active`}
+          >
+            <View style={styles.deviceList}>
+              {data.devices.map((device) => (
+                <InfoCard
+                  key={device.id}
+                  icon="smartphone"
+                  title={device.deviceName ?? "Unknown device"}
+                  metaIcon="clock"
+                  meta={
+                    device.lastSeenAt
+                      ? `Last seen ${new Date(
+                          device.lastSeenAt,
+                        ).toLocaleDateString("en-US", {
+                          month: "short",
+                          day: "numeric",
+                          year: "numeric",
+                        })}`
+                      : "Never seen"
+                  }
+                  badgeText="Active"
+                />
+              ))}
+            </View>
+          </Section>
+        )}
+      </ScrollView>
+    </>
+  );
+}
+
+const styles = StyleSheet.create({
+  root: { flex: 1, backgroundColor: colors.gray[50] },
+  center: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: colors.gray[50],
+  },
+  deviceList: { gap: 10 },
+  retryButton: {
+    marginTop: 16,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    backgroundColor: colors.bytecode[600],
+    borderRadius: 12,
+  },
+  retryLabel: { color: "#FFFFFF", fontWeight: "800" },
+});

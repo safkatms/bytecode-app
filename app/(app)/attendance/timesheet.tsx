@@ -589,7 +589,7 @@ export default function TimesheetScreen() {
       <ScrollView
         contentContainerStyle={[
           s.content,
-          { paddingBottom: insets.bottom + 32 },
+          { paddingBottom: insets.bottom + 10 },
         ]}
         showsVerticalScrollIndicator={false}
         refreshControl={
@@ -983,7 +983,7 @@ const s = StyleSheet.create({
     backgroundColor: "#fff",
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
-    paddingBottom: 40,
+    paddingBottom: 10,
   },
   handle: {
     width: 40,

@@ -129,7 +129,9 @@ export default function AdminAttendanceDetailScreen() {
       adminUpdateAttendance(Number(id), {
         status,
         checkInTime: checkInDate ? toLocalIsoDateTime(checkInDate) : undefined,
-        checkOutTime: checkOutDate ? toLocalIsoDateTime(checkOutDate) : undefined,
+        checkOutTime: checkOutDate
+          ? toLocalIsoDateTime(checkOutDate)
+          : undefined,
         note: note.trim() || undefined,
         lateMinutes,
       }),
@@ -214,7 +216,7 @@ export default function AdminAttendanceDetailScreen() {
       <ScrollView
         contentContainerStyle={[
           s.content,
-          { paddingBottom: insets.bottom + 40 },
+          { paddingBottom: insets.bottom + 10 },
         ]}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
@@ -293,7 +295,9 @@ export default function AdminAttendanceDetailScreen() {
               >
                 <Feather name="log-in" size={15} color={colors.bytecode[600]} />
                 <Text style={[s.timeBtnText, { color: colors.bytecode[700] }]}>
-                  {checkInDate ? fmtTime(toLocalIsoDateTime(checkInDate)) : "Not set"}
+                  {checkInDate
+                    ? fmtTime(toLocalIsoDateTime(checkInDate))
+                    : "Not set"}
                 </Text>
                 <Feather
                   name="chevron-down"
@@ -612,7 +616,7 @@ const s = StyleSheet.create({
     backgroundColor: "#fff",
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
-    paddingBottom: 32,
+    paddingBottom: 10,
   },
   iosSheetHeader: {
     flexDirection: "row",

@@ -25,6 +25,7 @@ export async function logout() {
         await clearTokens();
         queryClient.clear();
         useAuthStore.getState().setUser(null);
+        useAuthStore.getState().setAdminViewMode('me');
         useAuthStore.getState().setAuthenticated(false);
     }
 }

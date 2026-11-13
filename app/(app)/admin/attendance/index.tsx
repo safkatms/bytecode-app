@@ -582,7 +582,7 @@ const s = StyleSheet.create({
   },
   searchInput: { flex: 1, fontSize: 14, color: colors.gray[900] },
 
-  list: { padding: 16, paddingBottom: 40 },
+  list: { padding: 16, paddingBottom: 10 },
   row: {
     flexDirection: "row",
     alignItems: "center",

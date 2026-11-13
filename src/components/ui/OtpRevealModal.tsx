@@ -53,7 +53,7 @@ export function OtpRevealModal({
         activeOpacity={1}
         onPress={handleClose}
       />
-      <View style={[s.sheet, { paddingBottom: insets.bottom + 20 }]}>
+      <View style={[s.sheet, { paddingBottom: insets.bottom + 10 }]}>
         <View style={s.handle} />
 
         {/* Icon */}

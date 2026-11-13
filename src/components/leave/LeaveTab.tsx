@@ -274,7 +274,7 @@ export function LeaveTab({ kind, year }: { kind: LeaveKind; year: number }) {
 }
 
 const s = StyleSheet.create({
-  list: { paddingBottom: 110 },
+  list: { paddingBottom: 10 },
   center: { alignItems: "center", paddingVertical: 24 },
 
   filters: {
@@ -300,7 +300,12 @@ const s = StyleSheet.create({
   chipText: { fontSize: 12.5, fontWeight: "700", color: colors.gray[600] },
   chipTextActive: { color: "#fff" },
 
-  empty: { alignItems: "center", paddingTop: 36, paddingHorizontal: 32, gap: 8 },
+  empty: {
+    alignItems: "center",
+    paddingTop: 36,
+    paddingHorizontal: 32,
+    gap: 8,
+  },
   emptyIcon: {
     width: 68,
     height: 68,

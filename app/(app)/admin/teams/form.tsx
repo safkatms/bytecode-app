@@ -152,7 +152,11 @@ function MemberRow({
           <Text style={s.leaderBadgeText}>Leader</Text>
         </View>
       ) : (
-        <TouchableOpacity onPress={onRemove} hitSlop={8} style={s.removeMemberBtn}>
+        <TouchableOpacity
+          onPress={onRemove}
+          hitSlop={8}
+          style={s.removeMemberBtn}
+        >
           <Feather name="x" size={13} color={colors.red[500]} />
         </TouchableOpacity>
       )}
@@ -293,7 +297,7 @@ export default function AdminTeamFormScreen() {
       <ScrollView
         contentContainerStyle={[
           s.content,
-          { paddingBottom: insets.bottom + 32 },
+          { paddingBottom: insets.bottom + 10 },
         ]}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
@@ -316,7 +320,11 @@ export default function AdminTeamFormScreen() {
               render={({ field: { onChange, onBlur, value } }) => (
                 <View style={[s.inputRow, !!errors.name && s.inputRowError]}>
                   <View style={s.inputPrefix}>
-                    <Feather name="users" size={14} color={colors.bytecode[500]} />
+                    <Feather
+                      name="users"
+                      size={14}
+                      color={colors.bytecode[500]}
+                    />
                   </View>
                   <TextInput
                     style={s.textInput}
@@ -418,7 +426,11 @@ export default function AdminTeamFormScreen() {
         {isEdit && existing && (
           <>
             <View style={s.sectionLabel}>
-              <Feather name="user-check" size={13} color={colors.bytecode[600]} />
+              <Feather
+                name="user-check"
+                size={13}
+                color={colors.bytecode[600]}
+              />
               <Text style={s.sectionLabelText}>
                 Members ({existing.members?.length ?? 0})
               </Text>
@@ -455,7 +467,6 @@ export default function AdminTeamFormScreen() {
                   <Text style={s.emptyMembersText}>No members yet</Text>
                 </View>
               )}
-
             </View>
 
             <EmployeePickerModal
@@ -546,7 +557,7 @@ const s = StyleSheet.create({
     height: undefined,
     minHeight: 70,
     paddingTop: 14,
-    paddingBottom: 14,
+    paddingBottom: 10,
   },
   fieldError: { fontSize: 12, color: colors.red[500] },
 

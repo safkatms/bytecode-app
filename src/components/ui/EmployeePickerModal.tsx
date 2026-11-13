@@ -132,7 +132,11 @@ export function EmployeePickerModal({
                 />
               ) : (
                 selectedId === item.id && (
-                  <Feather name="check" size={16} color={colors.bytecode[600]} />
+                  <Feather
+                    name="check"
+                    size={16}
+                    color={colors.bytecode[600]}
+                  />
                 )
               )}
             </TouchableOpacity>
@@ -144,9 +148,12 @@ export function EmployeePickerModal({
           }
         />
         {multiple && (
-          <View style={[s.footer, { paddingBottom: insets.bottom + 12 }]}>
+          <View style={[s.footer, { paddingBottom: insets.bottom + 10 }]}>
             <TouchableOpacity
-              style={[s.confirmBtn, (picked.length === 0 || busy) && s.confirmOff]}
+              style={[
+                s.confirmBtn,
+                (picked.length === 0 || busy) && s.confirmOff,
+              ]}
               onPress={confirm}
               disabled={picked.length === 0 || busy}
               activeOpacity={0.85}
@@ -191,7 +198,7 @@ const s = StyleSheet.create({
     paddingVertical: 10,
   },
   searchInput: { flex: 1, fontSize: 14, color: colors.gray[900] },
-  list: { paddingHorizontal: 16, paddingBottom: 40 },
+  list: { paddingHorizontal: 16, paddingBottom: 10 },
   item: {
     flexDirection: "row",
     alignItems: "center",

@@ -72,7 +72,7 @@ export function UpdateBanner() {
           activeOpacity={1}
           onPress={() => setDetailsVisible(false)}
         />
-        <View style={[s.sheet, { paddingBottom: insets.bottom + 20 }]}>
+        <View style={[s.sheet, { paddingBottom: insets.bottom + 10 }]}>
           <View style={s.handle} />
 
           <View style={s.sheetHeader}>
@@ -127,7 +127,9 @@ export function UpdateBanner() {
           {/* App store page — primary on iOS, secondary on Android */}
           <TouchableOpacity
             style={
-              Platform.OS === "android" && data.apkUrl ? s.storeBtn : s.updateBtn
+              Platform.OS === "android" && data.apkUrl
+                ? s.storeBtn
+                : s.updateBtn
             }
             onPress={() => Linking.openURL(data.releaseUrl)}
           >

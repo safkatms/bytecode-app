@@ -208,7 +208,7 @@ export default function NotificationsScreen() {
           sections={sections}
           keyExtractor={(n) => String(n.id)}
           stickySectionHeadersEnabled={false}
-          contentContainerStyle={{ paddingBottom: insets.bottom + 32 }}
+          contentContainerStyle={{ paddingBottom: insets.bottom + 10 }}
           refreshControl={
             <RefreshControl refreshing={isRefetching} onRefresh={refetch} />
           }

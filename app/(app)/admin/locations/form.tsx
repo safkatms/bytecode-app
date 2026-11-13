@@ -157,7 +157,7 @@ export default function AdminLocationFormScreen() {
       <ScrollView
         contentContainerStyle={[
           s.content,
-          { paddingBottom: insets.bottom + 32 },
+          { paddingBottom: insets.bottom + 10 },
         ]}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}

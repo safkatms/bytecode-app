@@ -171,13 +171,13 @@ export default function ReportsScreen() {
       <ScrollView
         contentContainerStyle={[
           s.content,
-          { paddingBottom: insets.bottom + 32 },
+          { paddingBottom: insets.bottom + 10 },
         ]}
         keyboardShouldPersistTaps="handled"
       >
         <Text style={s.note}>
-          An Excel file with a summary and one tab per week (Saturday to
-          Friday) is emailed to the people you choose.
+          An Excel file with a summary and one tab per week (Saturday to Friday)
+          is emailed to the people you choose.
         </Text>
 
         <Text style={s.label}>Period</Text>
@@ -428,7 +428,12 @@ const s = StyleSheet.create({
     borderColor: colors.gray[200],
   },
   dateLabel: { fontSize: 11, color: colors.gray[400] },
-  dateValue: { marginTop: 2, fontSize: 14, fontWeight: "600", color: colors.gray[800] },
+  dateValue: {
+    marginTop: 2,
+    fontSize: 14,
+    fontWeight: "600",
+    color: colors.gray[800],
+  },
   pickBtn: {
     padding: 14,
     borderRadius: 12,

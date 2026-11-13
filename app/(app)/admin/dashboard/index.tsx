@@ -26,6 +26,8 @@ import { getApiErrorMessage } from "@/lib/api-error";
 import { colors } from "@/components/ui/theme";
 import {
   usePresence,
+  ViewSwitch,
+  EmployeeDashboardView,
   DashboardHero,
   FloatingCard,
   CheckInCta,
@@ -113,7 +115,7 @@ function deptName(d: { id: number; name: string } | string | null | undefined) {
   return typeof d === "object" ? d.name : d;
 }
 
-export default function AdminDashboardScreen() {
+function AdminDashboardView({ switcher }: { switcher: React.ReactNode }) {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { user } = useAuthStore();
@@ -193,72 +195,75 @@ export default function AdminDashboardScreen() {
 
   return (
     <>
-    <PendingCheckoutPrompt />
-    <ScrollView
-      style={styles.root}
-      contentContainerStyle={{ paddingBottom: insets.bottom + 110 }}
-      showsVerticalScrollIndicator={false}
-      refreshControl={
-        <RefreshControl refreshing={isRefetching} onRefresh={handleRefresh} />
-      }
-    >
-      <DashboardHero
-        paddingTop={insets.top + 14}
-        date={fmtLongDate()}
-        greeting={user?.firstName ? `Hi, ${user.firstName}` : "Admin Dashboard"}
-        avatar={{
-          uri: myDay?.profile?.avatarUrl ?? user?.avatarUrl,
-          firstName: user?.firstName,
-          lastName: user?.lastName,
-        }}
-        statusLabel={`${presentPct}% attendance today`}
-        statusColor={colors.green[400]}
-        presence={presence}
-        onSettings={() => router.push("/(app)/settings")}
-        onNotifications={() => router.push("/(app)/notifications")}
-        unreadCount={unread}
-      />
+      <PendingCheckoutPrompt />
+      <ScrollView
+        style={styles.root}
+        contentContainerStyle={{ paddingBottom: insets.bottom + 10 }}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={isRefetching} onRefresh={handleRefresh} />
+        }
+      >
+        <DashboardHero
+          paddingTop={insets.top + 14}
+          date={fmtLongDate()}
+          greeting={
+            user?.firstName ? `Hi, ${user.firstName}` : "Admin Dashboard"
+          }
+          avatar={{
+            uri: myDay?.profile?.avatarUrl ?? user?.avatarUrl,
+            firstName: user?.firstName,
+            lastName: user?.lastName,
+          }}
+          statusLabel={`${presentPct}% attendance today`}
+          statusColor={colors.green[400]}
+          presence={presence}
+          onSettings={() => router.push("/(app)/settings")}
+          onNotifications={() => router.push("/(app)/notifications")}
+          unreadCount={unread}
+          badgeExtra={switcher}
+        />
 
-      <FloatingCard
-        title="Today's overview"
-        pillText={fmtShortDate()}
-        metrics={[
-          {
-            key: "present",
-            icon: "check-circle",
-            iconBg: colors.bytecode[50],
-            iconColor: colors.bytecode[600],
-            label: "Present",
-            value: String(ta.present),
-            sub: `of ${employees.active} active`,
-            emphasize: true,
-          },
-          {
-            key: "late",
-            icon: "clock",
-            iconBg: colors.amber[50],
-            iconColor: colors.amber[600],
-            label: "Late",
-            value: String(ta.late),
-            sub: "Arrived after 10:30",
-            emphasize: true,
-          },
-          {
-            key: "leave",
-            icon: "sun",
-            iconBg: colors.red[50],
-            iconColor: colors.red[500],
-            label: "On leave",
-            value: String(ta.onCasualLeave + ta.onSickLeave),
-            sub: `${ta.onCasualLeave} casual · ${ta.onSickLeave} sick`,
-            emphasize: true,
-          },
-        ]}
-      />
+        <FloatingCard
+          title="Today's overview"
+          pillText={fmtShortDate()}
+          metrics={[
+            {
+              key: "present",
+              icon: "check-circle",
+              iconBg: colors.bytecode[50],
+              iconColor: colors.bytecode[600],
+              label: "Present",
+              value: String(ta.present),
+              sub: `of ${employees.active} active`,
+              emphasize: true,
+            },
+            {
+              key: "late",
+              icon: "clock",
+              iconBg: colors.amber[50],
+              iconColor: colors.amber[600],
+              label: "Late",
+              value: String(ta.late),
+              sub: "Arrived after 10:30",
+              emphasize: true,
+            },
+            {
+              key: "leave",
+              icon: "sun",
+              iconBg: colors.red[50],
+              iconColor: colors.red[500],
+              label: "On leave",
+              value: String(ta.onCasualLeave + ta.onSickLeave),
+              sub: `${ta.onCasualLeave} casual · ${ta.onSickLeave} sick`,
+              emphasize: true,
+            },
+          ]}
+        />
 
-      <UpdateBanner />
+        <UpdateBanner />
 
-      {canCheckIn && (
+        {/* {canCheckIn && (
         <CheckInCta
           variant="in"
           onPress={() => router.push("/(app)/attendance/check-in")}
@@ -269,120 +274,133 @@ export default function AdminDashboardScreen() {
           variant="out"
           onPress={() => router.push("/(app)/attendance/check-out")}
         />
-      )}
+      )} */}
 
-      {myDay && (
-        <Section title="This month" pillIcon="calendar" pillText={fmtMonth()}>
-          <StatsGrid
-            items={[
-              {
-                label: "Present",
-                value: myDay.thisMonth.present,
-                icon: "users",
-                ...STAT_PALETTE.present,
-              },
-              {
-                label: "Late",
-                value: myDay.thisMonth.late,
-                icon: "clock",
-                ...STAT_PALETTE.late,
-              },
-              {
-                label: "On Leave",
-                value: myDay.thisMonth.onLeave,
-                icon: "sun",
-                ...STAT_PALETTE.leave,
-              },
-            ]}
+        {myDay && (
+          <Section title="This month" pillIcon="calendar" pillText={fmtMonth()}>
+            <StatsGrid
+              items={[
+                {
+                  label: "Present",
+                  value: myDay.thisMonth.present,
+                  icon: "users",
+                  ...STAT_PALETTE.present,
+                },
+                {
+                  label: "Late",
+                  value: myDay.thisMonth.late,
+                  icon: "clock",
+                  ...STAT_PALETTE.late,
+                },
+                {
+                  label: "On Leave",
+                  value: myDay.thisMonth.onLeave,
+                  icon: "sun",
+                  ...STAT_PALETTE.leave,
+                },
+              ]}
+            />
+          </Section>
+        )}
+
+        {/* <Section title="Quick actions">
+          <QuickActions
+            items={PERSONAL_ACTIONS}
+            onPress={(path) => router.push(path as any)}
+          />
+        </Section> */}
+
+        <Section
+          title="Admin menu"
+          onSeeAll={() => router.push("/(app)/admin/menu")}
+        >
+          <QuickActions
+            items={ADMIN_ACTIONS}
+            layout="grid"
+            onPress={(path) => router.push(path as any)}
           />
         </Section>
-      )}
 
-      <Section title="Quick actions">
-        <QuickActions
-          items={PERSONAL_ACTIONS}
-          onPress={(path) => router.push(path as any)}
-        />
-      </Section>
+        {deptData && deptData.length > 0 && (
+          <Section title="By department" pillIcon="calendar" pillText="Today">
+            <Card>
+              {deptData.map((item, i) => {
+                const pct =
+                  item.total > 0
+                    ? Math.round((item.present / item.total) * 100)
+                    : 0;
+                return (
+                  <React.Fragment key={item.department}>
+                    <ProgressRow
+                      label={item.department}
+                      pct={pct}
+                      meta={`${item.present}/${item.total} present · ${item.late} late`}
+                      color={
+                        pct >= 80
+                          ? colors.bytecode[500]
+                          : pct >= 50
+                            ? colors.amber[500]
+                            : colors.red[500]
+                      }
+                    />
+                    {i < deptData.length - 1 && <CardDivider />}
+                  </React.Fragment>
+                );
+              })}
+            </Card>
+          </Section>
+        )}
 
-      <Section
-        title="Admin menu"
-        onSeeAll={() => router.push("/(app)/admin/menu")}
-      >
-        <QuickActions
-          items={ADMIN_ACTIONS}
-          layout="grid"
-          onPress={(path) => router.push(path as any)}
-        />
-      </Section>
-
-      {deptData && deptData.length > 0 && (
-        <Section title="By department" pillIcon="calendar" pillText="Today">
-          <Card>
-            {deptData.map((item, i) => {
-              const pct =
-                item.total > 0
-                  ? Math.round((item.present / item.total) * 100)
-                  : 0;
-              return (
-                <React.Fragment key={item.department}>
-                  <ProgressRow
-                    label={item.department}
-                    pct={pct}
-                    meta={`${item.present}/${item.total} present · ${item.late} late`}
-                    color={
-                      pct >= 80
-                        ? colors.bytecode[500]
-                        : pct >= 50
-                          ? colors.amber[500]
-                          : colors.red[500]
+        {activity && activity.length > 0 && (
+          <Section
+            title="Recent activity"
+            onSeeAll={() => router.push("/(app)/admin/attendance")}
+          >
+            <Card>
+              {activity.map((item, i) => (
+                <React.Fragment key={`${item.id}-${item.type}`}>
+                  <PersonRow
+                    name={item.employee}
+                    avatarUrl={item.avatarUrl}
+                    meta={`${deptName(item.department)} · ${fmtClockTime(
+                      item.time,
+                    )}${item.isManual ? " · Manual" : ""}`}
+                    pillLabel={
+                      item.type === "check_out"
+                        ? "Checked out"
+                        : item.isLate
+                          ? `Late · ${item.lateMinutes ?? 0}m`
+                          : "Checked in"
+                    }
+                    pillColor={
+                      item.type === "check_out"
+                        ? colors.red[500]
+                        : item.isLate
+                          ? colors.amber[600]
+                          : colors.green[600]
                     }
                   />
-                  {i < deptData.length - 1 && <CardDivider />}
+                  {i < activity.length - 1 && <CardDivider />}
                 </React.Fragment>
-              );
-            })}
-          </Card>
-        </Section>
-      )}
-
-      {activity && activity.length > 0 && (
-        <Section
-          title="Recent activity"
-          onSeeAll={() => router.push("/(app)/admin/attendance")}
-        >
-          <Card>
-            {activity.map((item, i) => (
-              <React.Fragment key={`${item.id}-${item.type}`}>
-                <PersonRow
-                  name={item.employee}
-                  avatarUrl={item.avatarUrl}
-                  meta={`${deptName(item.department)} · ${fmtClockTime(
-                    item.time,
-                  )}${item.isManual ? " · Manual" : ""}`}
-                  pillLabel={
-                    item.type === "check_out"
-                      ? "Checked out"
-                      : item.isLate
-                        ? `Late · ${item.lateMinutes ?? 0}m`
-                        : "Checked in"
-                  }
-                  pillColor={
-                    item.type === "check_out"
-                      ? colors.red[500]
-                      : item.isLate
-                        ? colors.amber[600]
-                        : colors.green[600]
-                  }
-                />
-                {i < activity.length - 1 && <CardDivider />}
-              </React.Fragment>
-            ))}
-          </Card>
-        </Section>
-      )}
-    </ScrollView>
+              ))}
+            </Card>
+          </Section>
+        )}
+      </ScrollView>
     </>
+  );
+}
+
+export default function AdminDashboardScreen() {
+  // Admins land on their own (employee) dashboard and can flip to the admin one.
+  const mode = useAuthStore((s) => s.adminViewMode);
+  const setMode = useAuthStore((s) => s.setAdminViewMode);
+  const switcher = <ViewSwitch value={mode} onChange={setMode} />;
+
+  return mode === "me" ? (
+    <EmployeeDashboardView badgeExtra={switcher} />
+  ) : (
+    <AdminDashboardView switcher={switcher} />
   );
 }
 

@@ -23,7 +23,9 @@ import type { SickLeaveEmployeeBalance } from "@/types/sick-leave";
 function employeeName(b: SickLeaveEmployeeBalance) {
   const u = b.employee.user;
   const name = [u?.firstName, u?.lastName].filter(Boolean).join(" ");
-  return name || u?.email || b.employee.employeeCode || `Employee #${b.employee.id}`;
+  return (
+    name || u?.email || b.employee.employeeCode || `Employee #${b.employee.id}`
+  );
 }
 
 export default function AdminSickLeaveBalancesScreen() {
@@ -36,7 +38,12 @@ export default function AdminSickLeaveBalancesScreen() {
   const listQ = useQuery({
     queryKey: ["admin-sick-leave-balances", year, page, query],
     queryFn: () =>
-      adminListSickLeaveBalances({ year, page, limit: 20, search: query || undefined }),
+      adminListSickLeaveBalances({
+        year,
+        page,
+        limit: 20,
+        search: query || undefined,
+      }),
   });
 
   const meta = listQ.data?.meta;
@@ -125,7 +132,10 @@ export default function AdminSickLeaveBalancesScreen() {
                       style={[
                         s.statValue,
                         x.label === "Remaining" && {
-                          color: (x.value ?? 0) > 0 ? colors.green[600] : colors.red[500],
+                          color:
+                            (x.value ?? 0) > 0
+                              ? colors.green[600]
+                              : colors.red[500],
                         },
                       ]}
                     >
@@ -140,7 +150,10 @@ export default function AdminSickLeaveBalancesScreen() {
           ListFooterComponent={
             meta && meta.totalPages > 1 ? (
               <View style={s.pagination}>
-                <TouchableOpacity disabled={page === 1} onPress={() => setPage((p) => p - 1)}>
+                <TouchableOpacity
+                  disabled={page === 1}
+                  onPress={() => setPage((p) => p - 1)}
+                >
                   <Feather
                     name="chevron-left"
                     size={20}
@@ -157,7 +170,11 @@ export default function AdminSickLeaveBalancesScreen() {
                   <Feather
                     name="chevron-right"
                     size={20}
-                    color={page === meta.totalPages ? colors.gray[300] : colors.bytecode[600]}
+                    color={
+                      page === meta.totalPages
+                        ? colors.gray[300]
+                        : colors.bytecode[600]
+                    }
                   />
                 </TouchableOpacity>
               </View>
@@ -184,8 +201,13 @@ const s = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.gray[200],
   },
-  searchInput: { flex: 1, paddingVertical: 10, fontSize: 14, color: colors.gray[900] },
-  list: { paddingHorizontal: 16, paddingBottom: 40 },
+  searchInput: {
+    flex: 1,
+    paddingVertical: 10,
+    fontSize: 14,
+    color: colors.gray[900],
+  },
+  list: { paddingHorizontal: 16, paddingBottom: 10 },
   row: {
     backgroundColor: "#fff",
     borderRadius: 14,
@@ -194,8 +216,18 @@ const s = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.gray[100],
   },
-  rowTop: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: 8 },
-  rowName: { fontSize: 14, fontWeight: "800", color: colors.gray[900], flex: 1 },
+  rowTop: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: 8,
+  },
+  rowName: {
+    fontSize: 14,
+    fontWeight: "800",
+    color: colors.gray[900],
+    flex: 1,
+  },
   rowCode: { fontSize: 12, color: colors.gray[500], fontWeight: "600" },
   stats: { flexDirection: "row" },
   stat: { flex: 1, alignItems: "center", gap: 2 },

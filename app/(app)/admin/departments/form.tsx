@@ -158,7 +158,7 @@ export default function AdminDepartmentFormScreen() {
       <ScrollView
         contentContainerStyle={[
           s.content,
-          { paddingBottom: insets.bottom + 32 },
+          { paddingBottom: insets.bottom + 10 },
         ]}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
@@ -275,7 +275,7 @@ const s = StyleSheet.create({
     height: undefined,
     minHeight: 80,
     paddingTop: 14,
-    paddingBottom: 14,
+    paddingBottom: 10,
   },
   fieldError: { fontSize: 12, color: colors.red[500] },
   switchRow: {

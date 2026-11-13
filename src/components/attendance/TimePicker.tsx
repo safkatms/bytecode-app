@@ -48,9 +48,7 @@ export function TimeField({
         onPress={onPress}
         activeOpacity={0.8}
       >
-        <Text style={[s.fieldBtnText, { color: tint }]}>
-          {format(value)}
-        </Text>
+        <Text style={[s.fieldBtnText, { color: tint }]}>{format(value)}</Text>
         <Feather name="chevron-down" size={14} color={tint} />
       </TouchableOpacity>
     </View>
@@ -173,7 +171,7 @@ const s = StyleSheet.create({
     backgroundColor: "#fff",
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
-    paddingBottom: 32,
+    paddingBottom: 10,
   },
   sheetHeader: {
     flexDirection: "row",

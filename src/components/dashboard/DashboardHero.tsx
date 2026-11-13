@@ -19,6 +19,7 @@ export function DashboardHero({
   onNotifications,
   unreadCount = 0,
   overlap = 44,
+  badgeExtra,
   children,
 }: {
   paddingTop: number;
@@ -39,6 +40,8 @@ export function DashboardHero({
   unreadCount?: number;
   /** empty space at the bottom for a card that floats over the hero */
   overlap?: number;
+  /** rendered at the end of the badge row, e.g. a view switch */
+  badgeExtra?: React.ReactNode;
   children?: React.ReactNode;
 }) {
   return (
@@ -106,7 +109,7 @@ export function DashboardHero({
         </TouchableOpacity>
       </View>
 
-      {(statusLabel || presence === "at_office" || presence === "away") && (
+      {(statusLabel || badgeExtra || presence === "at_office" || presence === "away") && (
         <View style={s.badgeRow}>
           {statusLabel && (
             <View style={s.statusBadge}>
@@ -141,8 +144,10 @@ export function DashboardHero({
               </Text>
             </View>
           )}
+          {badgeExtra}
         </View>
       )}
+
 
       {children}
 
@@ -241,7 +246,7 @@ const s = StyleSheet.create({
     borderColor: colors.bytecode[800],
   },
   bellBadgeText: { fontSize: 10, fontWeight: "700", color: "#fff" },
-  badgeRow: { flexDirection: "row", alignItems: "center", gap: 10 },
+  badgeRow: { flexDirection: "row", alignItems: "center", gap: 10, flexWrap: "wrap" },
   statusBadge: {
     flexDirection: "row",
     alignItems: "center",

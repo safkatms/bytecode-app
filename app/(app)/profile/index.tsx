@@ -131,7 +131,11 @@ export default function ProfileScreen() {
     mutationFn: uploadMyAvatar,
     onSuccess: async () => {
       setError("");
-      const fresh = await qc.fetchQuery({ queryKey: ["me"], queryFn: getMe, staleTime: 0 });
+      const fresh = await qc.fetchQuery({
+        queryKey: ["me"],
+        queryFn: getMe,
+        staleTime: 0,
+      });
       setUser(fresh as any);
     },
     onError: (err) => setError(getApiErrorMessage(err, "Image upload failed")),
@@ -178,7 +182,7 @@ export default function ProfileScreen() {
       <ScrollView
         contentContainerStyle={[
           s.content,
-          { paddingBottom: insets.bottom + 32 },
+          { paddingBottom: insets.bottom + 10 },
         ]}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}

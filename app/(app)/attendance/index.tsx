@@ -88,7 +88,7 @@ export default function AttendanceIndexScreen() {
       />
 
       <ScrollView
-        contentContainerStyle={{ paddingBottom: insets.bottom + 110 }}
+        contentContainerStyle={{ paddingBottom: insets.bottom + 10 }}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
@@ -105,46 +105,48 @@ export default function AttendanceIndexScreen() {
         ) : (
           <>
             <View style={s.todayWrap}>
-            <FloatingCard
-              float={false}
-              title="Today"
-              pillIcon={null}
-              pillText={statusLabel}
-              pillColor={statusColor}
-              pillBg={`${statusColor}18`}
-              metrics={[
-                {
-                  key: "in",
-                  icon: "log-in",
-                  iconBg: colors.green[100],
-                  iconColor: colors.green[600],
-                  label: "Check-in",
-                  value: fmtClockTime(today?.checkInTime ?? null),
-                  sub: today?.checkInTime ? "Checked in" : "Not checked in",
-                },
-                {
-                  key: "out",
-                  icon: "log-out",
-                  iconBg: colors.red[100],
-                  iconColor: colors.red[600],
-                  label: "Check-out",
-                  value: fmtClockTime(today?.checkOutTime ?? null),
-                  sub: today?.checkOutTime ? "Checked out" : "Not checked out",
-                },
-                {
-                  key: "hours",
-                  icon: "clock",
-                  iconBg: colors.bytecode[50],
-                  iconColor: colors.bytecode[600],
-                  label: "Working hours",
-                  value: fmtWorkHours(
-                    today?.workHours != null ? Number(today.workHours) : null,
-                  ),
-                  sub: "Total for today",
-                  emphasize: true,
-                },
-              ]}
-            />
+              <FloatingCard
+                float={false}
+                title="Today"
+                pillIcon={null}
+                // pillText={statusLabel}
+                pillColor={statusColor}
+                pillBg={`${statusColor}18`}
+                metrics={[
+                  {
+                    key: "in",
+                    icon: "log-in",
+                    iconBg: colors.green[100],
+                    iconColor: colors.green[600],
+                    label: "Check-in",
+                    value: fmtClockTime(today?.checkInTime ?? null),
+                    sub: today?.checkInTime ? "Checked in" : "Not checked in",
+                  },
+                  {
+                    key: "out",
+                    icon: "log-out",
+                    iconBg: colors.red[100],
+                    iconColor: colors.red[600],
+                    label: "Check-out",
+                    value: fmtClockTime(today?.checkOutTime ?? null),
+                    sub: today?.checkOutTime
+                      ? "Checked out"
+                      : "Not checked out",
+                  },
+                  {
+                    key: "hours",
+                    icon: "clock",
+                    iconBg: colors.bytecode[50],
+                    iconColor: colors.bytecode[600],
+                    label: "Working hours",
+                    value: fmtWorkHours(
+                      today?.workHours != null ? Number(today.workHours) : null,
+                    ),
+                    sub: "Total for today",
+                    emphasize: true,
+                  },
+                ]}
+              />
             </View>
 
             {lateMinutes > 0 && (

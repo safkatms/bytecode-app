@@ -158,7 +158,7 @@ export function ApplyLeaveScreen({ kind }: { kind: LeaveKind }) {
       />
 
       <ScrollView
-        contentContainerStyle={{ paddingBottom: insets.bottom + 40 }}
+        contentContainerStyle={{ paddingBottom: insets.bottom + 10 }}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >

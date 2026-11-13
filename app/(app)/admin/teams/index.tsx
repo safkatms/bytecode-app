@@ -45,7 +45,11 @@ function TeamRow({
       <View
         style={[
           s.rowIcon,
-          { backgroundColor: team.isActive ? colors.bytecode[50] : colors.gray[100] },
+          {
+            backgroundColor: team.isActive
+              ? colors.bytecode[50]
+              : colors.gray[100],
+          },
         ]}
       >
         <Text
@@ -73,13 +77,21 @@ function TeamRow({
           onPress={onToggle}
           style={[
             s.activeBadge,
-            { backgroundColor: team.isActive ? colors.green[50] : colors.red[50] },
+            {
+              backgroundColor: team.isActive
+                ? colors.green[50]
+                : colors.red[50],
+            },
           ]}
         >
           <View
             style={[
               s.activeDot,
-              { backgroundColor: team.isActive ? colors.green[500] : colors.red[400] },
+              {
+                backgroundColor: team.isActive
+                  ? colors.green[500]
+                  : colors.red[400],
+              },
             ]}
           />
           <Text
@@ -238,7 +250,9 @@ export default function AdminTeamsScreen() {
                 </Text>
                 <TouchableOpacity
                   style={[s.pageBtn, page === meta.totalPages && s.pageBtnOff]}
-                  onPress={() => setPage((p) => Math.min(meta.totalPages, p + 1))}
+                  onPress={() =>
+                    setPage((p) => Math.min(meta.totalPages, p + 1))
+                  }
                   disabled={page === meta.totalPages}
                 >
                   <Feather
@@ -276,7 +290,7 @@ const s = StyleSheet.create({
     height: 42,
   },
   searchInput: { flex: 1, fontSize: 14, color: colors.gray[900] },
-  list: { paddingHorizontal: 16, paddingBottom: 40 },
+  list: { paddingHorizontal: 16, paddingBottom: 10 },
   row: {
     flexDirection: "row",
     alignItems: "center",
